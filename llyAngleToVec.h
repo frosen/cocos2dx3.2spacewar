@@ -45,20 +45,18 @@ public:
 	static void destroyInstance();
 
 	//根据角度获取向量（从0到359）
-	AngleVec getVec(int angle) 
-	{ return AngleVec(m_fVec[angle], m_fVec[angle + 90]); }
+	AngleVec getVec(int angle);
 
 	//根据角度和距离获得向量
-	AngleVec getVec(int angle, float distance) 
-	{ return AngleVec(m_fVec[angle] * distance, m_fVec[angle + 90] * distance); }
+	AngleVec getVec(int angle, float distance);
 
 protected:
 	virtual bool init();
 
 protected:
-	static AngleToVec* m_A2V; //单例
+	static AngleToVec* s_A2V; //单例
 
-	float m_fVec[450]; //从0到449度
+	float m_fVec[450]; //从0到449度长度为1的矢量值
 };
 
 //根据两点位置计算向量
