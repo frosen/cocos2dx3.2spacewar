@@ -36,39 +36,39 @@
 //如果出错则返回错误
 #define LLY_RETURN_FALSE_IF_NOT(_CLASS_)\
 	if(!_CLASS_) { \
-	LLY_LOG("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("@wrong"); \
 	return false; }
  
 //如果出错则返回
 #define LLY_RETURN_IF_NOT(_CLASS_)\
 	if(!_CLASS_){ \
-	LLY_LOG("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("@wrong"); \
 	return; } 
 
 //如果怎样则返回错误
 #define LLY_RETURN_FALSE_IF(_CLASS_)\
 	if(_CLASS_) { \
-	LLY_LOG("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("@wrong"); \
 	return false; }
 
 //如果怎样则返回
 #define LLY_RETURN_IF(_CLASS_)\
 	if(_CLASS_){ \
-	LLY_LOG("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("@wrong"); \
 	return; } 
 
 //=====================================================
 //函数正确返回
 #define LLY_RETURN_TRUE_FOR_SUCCESS \
-	LLY_LOG("right excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("right excute"); \
 	return true
 				
 #define LLY_RETURN_FALSE_FOR_FAIL \
-	LLY_LOG("@wrong excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("@wrong excute"); \
 	return false
 
 #define LLY_RETURN_FOR_FAIL \
-	LLY_LOG("@wrong excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	LLY_LOG_CUR_LOC("@wrong excute"); \
 	return
 
 #endif //
