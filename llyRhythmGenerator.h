@@ -58,7 +58,7 @@ public:
 	std::function <void(int)> eventPerBeat;
 
 protected:
-	static RhythmGenerator* m_RG; //单例
+	static RhythmGenerator* s_RG; //单例
 
 	bool m_bPlaying; //正在进行播放同时计算节奏
 	bool m_bDelay; //是否有延迟开始计算节奏

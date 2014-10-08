@@ -4,7 +4,7 @@ USING_NS_CC;
 using namespace std;
 using namespace lly;
 
-CSVLoad* CSVLoad::m_CsvLoad = nullptr;
+CSVLoad* CSVLoad::s_CsvLoad = nullptr;
 
 CSVLoad::CSVLoad()
 {
@@ -18,16 +18,16 @@ CSVLoad::~CSVLoad()
 
 CSVLoad* CSVLoad::getInstance()
 {
-	if (!m_CsvLoad)
+	if (!s_CsvLoad)
 	{
-		m_CsvLoad = new CSVLoad();
+		s_CsvLoad = new CSVLoad();
 	}
-	return m_CsvLoad;
+	return s_CsvLoad;
 }
 
 void CSVLoad::destroyInstance()
 {
-	CC_SAFE_DELETE(m_CsvLoad);
+	CC_SAFE_DELETE(s_CsvLoad);
 }
 
 bool CSVLoad::loadFile( const char* sPath )

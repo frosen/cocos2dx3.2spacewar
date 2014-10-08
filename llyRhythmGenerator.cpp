@@ -5,7 +5,7 @@ USING_NS_CC;
 using namespace lly;
 using namespace CocosDenshion;
 
-RhythmGenerator* RhythmGenerator::m_RG = nullptr;
+RhythmGenerator* RhythmGenerator::s_RG = nullptr;
 
 RhythmGenerator::RhythmGenerator() : m_bPlaying(false), m_bDelay(false), m_nMSecondPerBeat(1000), m_nMarginMSecond(0)
 {
@@ -19,20 +19,20 @@ RhythmGenerator::~RhythmGenerator()
 
 RhythmGenerator* RhythmGenerator::getInstance()
 {
-	if (!m_RG)
+	if (!s_RG)
 	{
-		m_RG = new RhythmGenerator();
-		if (!m_RG) return nullptr;
+		s_RG = new RhythmGenerator();
+		if (!s_RG) return nullptr;
 		else
-			Director::getInstance()->getScheduler()->scheduleUpdate(m_RG, 0, true);
+			Director::getInstance()->getScheduler()->scheduleUpdate(s_RG, 0, true);
 	}
-	return m_RG;
+	return s_RG;
 }
 
 void RhythmGenerator::end()
 {
-	Director::getInstance()->getScheduler()->unscheduleUpdate(m_RG);
-	CC_SAFE_DELETE(m_RG);
+	Director::getInstance()->getScheduler()->unscheduleUpdate(s_RG);
+	CC_SAFE_DELETE(s_RG);
 }
 
 void RhythmGenerator::start()

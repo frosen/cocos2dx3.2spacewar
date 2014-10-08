@@ -48,7 +48,7 @@ public:
 	const int findValueInWhichLine(const char* chValue, int nValueCol, const char* csvFilePath);
 
 protected:
-	static CSVLoad* m_CsvLoad;
+	static CSVLoad* s_CsvLoad;
 
 	std::map<const char*, std::vector<std::vector<std::string> > > m_mapCsv;
 };

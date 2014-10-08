@@ -6,8 +6,6 @@
 
 //////////////需要定义PATH_I18N_PUBLIC：csv文件路径//////////////////
 
-//////////////需要I18NEnumStrKey.h中定制字符串枚举和语言选择枚举//////////////////
-
 //////////////需要 include "ToolCsvLoad.h"//////////////////
 */
 
@@ -67,7 +65,7 @@ protected:
 	bool loadStringFromConf(const char* sFilePath);
 
 protected:
-	static I18N* m_I18N;
+	static I18N* s_I18N;
 
 	//字典： ID，字符串
 	std::map<std::string, std::string> m_mapString;

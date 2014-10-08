@@ -4,7 +4,7 @@
 USING_NS_CC;
 using namespace lly;
 
-I18N* I18N::m_I18N = nullptr;
+I18N* I18N::s_I18N = nullptr;
 
 I18N::I18N() : elanguage(ENGLISH)
 {
@@ -18,25 +18,25 @@ I18N::~I18N()
 
 I18N* I18N::getInstance()
 {
-	if (nullptr == m_I18N)
+	if (nullptr == s_I18N)
 	{
-		m_I18N = new I18N();
-		if (m_I18N && m_I18N->loadStringFromConf(PATH_I18N))
+		s_I18N = new I18N();
+		if (s_I18N && s_I18N->loadStringFromConf(PATH_I18N))
 		{
-			return m_I18N;
+			return s_I18N;
 		}
 		else
 		{
-			CC_SAFE_DELETE(m_I18N);
+			CC_SAFE_DELETE(s_I18N);
 			return nullptr;
 		}
 	}
-	return m_I18N;
+	return s_I18N;
 }
 
 void I18N::destroyInstance()
 {
-	CC_SAFE_DELETE(m_I18N);
+	CC_SAFE_DELETE(s_I18N);
 }
 
 void I18N::setLanguageType( LangType langType )
