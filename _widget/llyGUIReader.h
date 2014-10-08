@@ -13,6 +13,7 @@
 
 #include "cocos2d.h"
 #include "cocostudio/CocoStudio.h"
+#include "ui/CocosGUI.h"
 
 namespace lly{
 
@@ -42,7 +43,7 @@ protected:
 	virtual ~GUIReader();
 
 protected:
-	std::map<char*, cocos2d::Vec2> m_mapPoint; //放置坐标点的map
+	std::map<std::string, cocos2d::Vec2> m_mapPoint; //放置坐标点的map
 };
 
 class WidgetPropertiesReader0300 : public cocostudio::WidgetPropertiesReader0300
@@ -59,16 +60,16 @@ public:
 void setWidgetFast(cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, char* childname, ...);
 
 //重载版本，给控件增加触摸回调
-void setWidgetFast(cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, cocos2d::ui::ccWidgetTouchCallback callback, char* childname, ...);
-
-//重载，回调是复选框的回调
-void setWidgetFast(cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, cocos2d::ui::ccCheckBoxCallback callback, char* childname, ...);
+void setWidgetFast(cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, cocos2d::ui::Widget::ccWidgetTouchCallback callback, char* childname, ...);
 
 //重载版本，给控件增加触摸回调，不需要给控件声明一个指针控制它
-void setWidgetFast(cocos2d::ui::Widget* father, cocos2d::ui::ccWidgetTouchCallback callback, char* childname, ...);
+void setWidgetFast(cocos2d::ui::Widget* father, cocos2d::ui::Widget::ccWidgetTouchCallback callback, char* childname, ...);
 
-//重载版本，给控件增加触摸回调，回调是复选框的回调，不需要给控件声明一个指针控制它
-void setWidgetFast(cocos2d::ui::Widget* father, cocos2d::ui::ccCheckBoxCallback callback, char* childname, ...);
+//复选框, 回调是复选框的回调
+void setCheckBoxFast(cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, cocos2d::ui::CheckBox::ccCheckBoxCallback callback, char* childname, ...);
+
+//给复选框增加触摸回调，回调是复选框的回调，不需要给控件声明一个指针控制它
+void setCheckBoxFast(cocos2d::ui::Widget* father, cocos2d::ui::CheckBox::ccCheckBoxCallback callback, char* childname, ...);
 
 //获取子控件，根据父层和父层下每层子控件的名称
 //如果出错则会打断

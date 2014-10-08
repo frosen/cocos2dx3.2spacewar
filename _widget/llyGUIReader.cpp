@@ -1,5 +1,4 @@
 #include "llyGUIReader.h"
-#include "ui/CocosGUI.h"
 
 //================
 
@@ -83,11 +82,19 @@ void lly::GUIReader::registerTypeWithExName( const std::string& classType, cocos
 
 void lly::GUIReader::recordPointInMap( const char* name, Vec2 &point )
 {
-	m_mapPoint.insert(std::pair<char*, Vec2>(name, point));
+	m_mapPoint.insert(std::pair<std::string, Vec2>(name, point));
 }
 
 cocos2d::Vec2 lly::GUIReader::getPoint( const char* name )
 {
+#if COCOS2D_DEBUG //调试期间先查看需要点名称是否在列表里面，不在就输出错误
+	if (m_mapPoint.find(name) == m_mapPoint.end()) 
+	{
+		std::string msg = "@wrong point at ";
+		msg += name;
+		CCAssert(false, msg.c_str());
+	}
+#endif //COCOS2D_DEBUG
 	return m_mapPoint.at(name);
 }
 
@@ -117,10 +124,12 @@ cocos2d::ui::Widget* lly::WidgetPropertiesReader0300::widgetFromJsonDictionary( 
 	if (name && name[0] == 'P' && name[1] == 'O')
 	{
 		//在json中获取x，y坐标点
-		float x = DICTOOL->getFloatValue_json(uiOptions, "x");
-		float y = DICTOOL->getFloatValue_json(uiOptions, "y");
+		float POSx = DICTOOL->getFloatValue_json(uiOptions, "x");
+		float POSy = DICTOOL->getFloatValue_json(uiOptions, "y");
+		CCLOG("get point name %s, x %f, y %f", name, POSx, POSy);
 
 		//放入map中
+		GUIReader::getInstance()->recordPointInMap(name, Vec2(POSx, POSy));
 
 		//返回空值，因为这个控件就不显示于界面上了
 		return nullptr;
@@ -218,7 +227,7 @@ void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* fathe
 	va_end(args);
 }
 
-void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, cocos2d::ui::ccWidgetTouchCallback callback, char* childname, ... )
+void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, Widget::ccWidgetTouchCallback callback, char* childname, ... )
 {
 	//获得控件
 	va_list args;
@@ -230,19 +239,7 @@ void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* fathe
 	widget->addTouchEventListener(callback);
 }
 
-void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, cocos2d::ui::ccCheckBoxCallback callback, char* childname, ... )
-{
-	//获得控件
-	va_list args;
-	va_start(args, childname);
-	widget = getChildWidget(father, childname, args);
-	va_end(args);
-
-	//给控件赋予触控回调（复选框的）
-	(cocos2d::ui::CheckBox*)widget->addEventListener(callback);
-}
-
-void lly::setWidgetFast( cocos2d::ui::Widget* father, cocos2d::ui::ccWidgetTouchCallback callback, char* childname, ... )
+void lly::setWidgetFast( cocos2d::ui::Widget* father, Widget::ccWidgetTouchCallback callback, char* childname, ... )
 {
 	//声明一个widget类型
 	cocos2d::ui::Widget* wiTemp = nullptr;
@@ -257,7 +254,19 @@ void lly::setWidgetFast( cocos2d::ui::Widget* father, cocos2d::ui::ccWidgetTouch
 	wiTemp->addTouchEventListener(callback);
 }
 
-void lly::setWidgetFast( cocos2d::ui::Widget* father, cocos2d::ui::ccCheckBoxCallback callback, char* childname, ... )
+void lly::setCheckBoxFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, CheckBox::ccCheckBoxCallback callback, char* childname, ... )
+{
+	//获得控件
+	va_list args;
+	va_start(args, childname);
+	widget = getChildWidget(father, childname, args);
+	va_end(args);
+
+	//给控件赋予触控回调（复选框的）
+	static_cast<cocos2d::ui::CheckBox*>(widget)->addEventListener(callback);
+}
+
+void lly::setCheckBoxFast( cocos2d::ui::Widget* father, CheckBox::ccCheckBoxCallback callback, char* childname, ... )
 {
 	//声明一个和widget类型一致的指针
 	cocos2d::ui::Widget* wiTemp = nullptr;
@@ -269,7 +278,7 @@ void lly::setWidgetFast( cocos2d::ui::Widget* father, cocos2d::ui::ccCheckBoxCal
 	va_end(args);
 
 	//给控件赋予触控回调（复选框的）
-	(cocos2d::ui::CheckBox*)wiTemp->addEventListener(callback);
+	static_cast<cocos2d::ui::CheckBox*>(wiTemp)->addEventListener(callback);
 }
 
 cocos2d::ui::Widget* lly::getChildWidget( cocos2d::ui::Widget* father, char* pch, ... )
@@ -292,7 +301,7 @@ cocos2d::ui::Widget* lly::getChildWidget( cocos2d::ui::Widget* father, char* pch
 		{
 			childname = va_arg(params, char*);
 
-			if (childname == nullptr) break;
+			if (childname == nullptr || childname[0] == '\0') break;
 
 			wiChild = static_cast<cocos2d::ui::Widget*>(wiChild->getChildByName(childname));
 			if (wiChild == nullptr) break;
