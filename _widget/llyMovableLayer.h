@@ -30,9 +30,8 @@ public:
 		rotate = 4,
 	};
 
-	class isHitted //记录触点是否点中
+	struct isHitted //记录触点是否点中
 	{
-	public:
 		bool bPoint2exist;
 		bool bPoint2Hitted;
 		cocos2d::Vec2 oldAnchor;
@@ -55,14 +54,15 @@ private:
 	//触点是否击中了node
 	static bool containsPoint(cocos2d::Node* node, cocos2d::Vec2 point);
 
-	//改变锚点位置到第一触点，缩放和旋转以此为基点
-	static void changeAnchorToTouchPoint(cocos2d::Node* node, const cocos2d::Vec2 &point, cocos2d::Vec2 &oldAnchor);
-	static void changeAnchorBack(cocos2d::Node* node, const cocos2d::Vec2 &point, cocos2d::Vec2 &oldAnchor);
+	//改变锚点位置到第一触点，缩放和旋转以此为基点，记录原有锚点
+	static void changeAnchorToTouchPoint(cocos2d::Node* node, const cocos2d::Vec2 &pointInNode, cocos2d::Vec2 &oldAnchor_out);
+	static void changeAnchorBack(cocos2d::Node* node, const cocos2d::Vec2 &pointInNode, cocos2d::Vec2 &oldAnchor);
 
 private:
+	//三种触摸功能
 	static TouchesCallback m_moveMoved; //点击移动
 	static TouchesCallback m_scaleMoved; //两点开合改变大小
-	static TouchesCallback m_rotateMoved; //两点扭错旋转图层
+	static TouchesCallback m_rotateMoved; //两点扭错旋转图	
 
 	//记录当前node和是否点击，在bengin，move，end间传递消息
 	static std::map <cocos2d::Node*, isHitted> mNodeIsHitted; 
