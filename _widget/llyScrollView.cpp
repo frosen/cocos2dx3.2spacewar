@@ -1799,7 +1799,7 @@ lly::ScrollView* lly::ScrollView::create()
 void lly::ScrollView::setInnerContainerSize( const cocos2d::Size &size )
 {
 	llyO::ScrollView::setInnerContainerSize(size);
-	void changeInnerContainerSizeEvent(); //添加
+	changeInnerContainerSizeEvent(); //添加
 }
 
 std::string lly::ScrollView::getDescription() const 
@@ -1810,7 +1810,7 @@ std::string lly::ScrollView::getDescription() const
 void lly::ScrollView::onSizeChanged()
 {
 	llyO::ScrollView::onSizeChanged();
-	void changeInnerContainerSizeEvent(); //添加
+	changeInnerContainerSizeEvent(); //添加
 }
 
 void lly::ScrollView::jumpToDestination(const cocos2d::Vec2& des)

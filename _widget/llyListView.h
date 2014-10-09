@@ -1,7 +1,11 @@
 /*
 名称：llyListView.h
 内容：新的ListView
-			llyO中的listview和原版一致，其中有些函数变成虚函数为了继承
+			llyO中的listview和原版一致，其中有些函数变成虚函数为了继承，包括
+			pushBackDefaultItem to removeAllItems
+			setGravity
+			updateInnerContainerSize
+			remedyLayoutParameter
 			添加动画
 			添加对目标控件的操作
 			添加移动控件的函数

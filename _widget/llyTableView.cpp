@@ -4,6 +4,8 @@ using namespace lly;
 USING_NS_CC;
 using namespace ui;
 
+IMPLEMENT_CLASS_GUI_INFO(lly::TableView)
+
 lly::TableView::TableView() : 
 	llyO::ListView(),
 	m_eLayoutType(ABSOLUTE),
@@ -150,10 +152,11 @@ Widget* lly::TableView::getLastItem()
 
 void lly::TableView::refreshView()
 {
+	m_arHeadNode.clear(); //清空头行记录，在refresh中重新加载
 	bneedcheckindex = false; //为了提高效率，不检测
-	lastWidget = nullptr;
+	lastItem = nullptr; //从第一个控件开始刷新，第一个控件的上一个控件为空
 	llyO::ListView::refreshView();
-	bneedcheckindex = true;
+	bneedcheckindex = true; //恢复
 }
 
 //=====================================
@@ -169,12 +172,12 @@ bool lly::TableView::init()
 
 void lly::TableView::updateInnerContainerSize()
 {
+	if (!getItem(0) || !getLastItem()) return;
+
 	switch (m_eArrangeDir) //水平排列
 	{
 	case EArrangementDirection::HORIZONTAL: 
 		{
-			if (!getItem(0) || !getLastItem()) return;
-
 			//第一个控件到最后一个控件的垂直长度加上两边留白的总距离
 			float f = abs(getItem(0)->getPositionY() - getLastItem()->getPositionY()) + 2 * m_fVerticalMargin;
 			if (f > _contentSize.height && f != _innerContainer->getContentSize().height )
@@ -206,8 +209,6 @@ void lly::TableView::updateInnerContainerSize()
 		break;
 	case EArrangementDirection::VERTICAL:
 		{
-			if (!getItem(0) || !getLastItem()) return;
-
 			//第一个控件到最后一个控件的水平长度加上两边留白的总距离
 			float f = abs(getItem(0)->getPositionX() - getLastItem()->getPositionX()) + 2 * m_fVerticalMargin;
 
@@ -226,7 +227,7 @@ void lly::TableView::updateInnerContainerSize()
 						if (first)
 						{
 							float fORI = item->getPositionX();
-							item->setPositionX(_innerContainer->getSize().width - m_fVerticalMargin);
+							item->setPositionX(_innerContainer->getContentSize().width - m_fVerticalMargin);
 							fDistance = item->getPositionX() - fORI;
 						}
 						else
@@ -262,109 +263,104 @@ void lly::TableView::remedyLayoutParameter( cocos2d::ui::Widget* item )
 		case ETableViewGravity::LEFT_TOP: //左上
 			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				item->setPosition(Vec2(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往右增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(m_fWidgetSpacing, 0)));
+					item->setPosition(lastItem->getPosition() + Vec2(m_fWidgetSpacing, 0));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(lastitem->getContentSize().width, 0)));
+					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
+					item->setPosition(lastItem->getPosition() + Vec2(fAverage, 0));
 				}
 
 				if (item->getPositionX() + m_fHorizontalMargin > _innerContainer->getContentSize().width) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(m_fHorizontalMargin, lastitem->getPositionY() - m_fLineSpacing));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(m_fHorizontalMargin, lastItem->getPositionY() - m_fLineSpacing));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
-		case lly::TABLEVIEW_GRAVITY_RIGHT_TOP:
-			if (nIndex == 0)
+		case ETableViewGravity::RIGHT_TOP:
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//上一个控件
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往左边增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(-m_fWidgetSpacing, 0)));
+					item->setPosition(lastItem->getPosition() - Vec2(m_fWidgetSpacing, 0));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(-lastitem->getContentSize().width, 0)));
+					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
+					item->setPosition(lastItem->getPosition() - Vec2(fAverage, 0));
 				}
 
 				if (item->getPositionX() - m_fHorizontalMargin < 0) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(_innerContainer->getContentSize().width - m_fHorizontalMargin, lastitem->getPositionY() - m_fLineSpacing));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, lastItem->getPositionY() - m_fLineSpacing));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
-		case lly::TABLEVIEW_GRAVITY_LEFT_BOTTOM:
-			if (nIndex == 0)
+		case ETableViewGravity::LEFT_BOTTOM:
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(m_fHorizontalMargin, m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(m_fHorizontalMargin, m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//上一个控件
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往右增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(m_fWidgetSpacing, 0)));
+					item->setPosition(lastItem->getPosition() + Vec2(m_fWidgetSpacing, 0));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(lastitem->getContentSize().width, 0)));
+					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
+					item->setPosition(lastItem->getPosition() + Vec2(fAverage, 0));
 				}
 
 				if (item->getPositionX() + m_fHorizontalMargin > _innerContainer->getContentSize().width) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(m_fHorizontalMargin, lastitem->getPositionY() + m_fLineSpacing));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(m_fHorizontalMargin, lastItem->getPositionY() + m_fLineSpacing));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
-		case lly::TABLEVIEW_GRAVITY_RIGHT_BOTTOM:
-			if (nIndex == 0)
+		case ETableViewGravity::RIGHT_BOTTOM:
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//上一个控件
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往左边增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(-m_fWidgetSpacing, 0)));
+					item->setPosition(lastItem->getPosition() - Vec2(-m_fWidgetSpacing, 0));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(-lastitem->getContentSize().width, 0)));
+					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
+					item->setPosition(lastItem->getPosition() - Vec2(lastItem->getContentSize().width, 0));
 				}
 
 				if (item->getPositionX() - m_fHorizontalMargin < 0) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(_innerContainer->getContentSize().width - m_fHorizontalMargin, lastitem->getPositionY() + m_fLineSpacing));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, lastItem->getPositionY() + m_fLineSpacing));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
@@ -372,118 +368,111 @@ void lly::TableView::remedyLayoutParameter( cocos2d::ui::Widget* item )
 			break;
 		}
 		break;
-	case lly::TABLEVIEW_DIR_VERTICAL_FIRST:
+	case EArrangementDirection::VERTICAL:
 
-		switch (m_gravity) //根据停靠方向不同
+		switch (m_eTVG) //根据停靠方向不同
 		{
-		case lly::TABLEVIEW_GRAVITY_LEFT_TOP: //左上
-			if (nIndex == 0)
+		case ETableViewGravity::LEFT_TOP: //左上
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//上一个控件
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往右增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, -m_fWidgetSpacing)));
+					item->setPosition(lastItem->getPosition() - Vec2(0, m_fWidgetSpacing));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, -lastitem->getContentSize().height)));
+					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
+					item->setPosition(lastItem->getPosition() - Vec2(0, fAverage));
 				}
 
 				if (item->getPositionY() - m_fHorizontalMargin < 0) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(lastitem->getPositionX() + m_fLineSpacing, _innerContainer->getContentSize().height - m_fVerticalMargin));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(lastItem->getPositionX() + m_fLineSpacing, _innerContainer->getContentSize().height - m_fVerticalMargin));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
-		case lly::TABLEVIEW_GRAVITY_RIGHT_TOP:
-			if (nIndex == 0)
+		case ETableViewGravity::RIGHT_TOP:
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//上一个控件
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往下边增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, -m_fWidgetSpacing)));
+					item->setPosition(lastItem->getPosition() - Vec2(0, m_fWidgetSpacing));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, -lastitem->getContentSize().height)));
+					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
+					item->setPosition(lastItem->getPosition() - Vec2(0, fAverage));
 				}
 
 				if (item->getPositionY() - m_fHorizontalMargin < 0) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(lastitem->getPositionX() - m_fLineSpacing, _innerContainer->getContentSize().height - m_fVerticalMargin));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(lastItem->getPositionX() - m_fLineSpacing, _innerContainer->getContentSize().height - m_fVerticalMargin));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
-		case lly::TABLEVIEW_GRAVITY_LEFT_BOTTOM:
-			if (nIndex == 0)
+		case ETableViewGravity::LEFT_BOTTOM:
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(m_fHorizontalMargin, m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(m_fHorizontalMargin, m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//上一个控件
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往上增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, m_fWidgetSpacing)));
+					item->setPosition(lastItem->getPosition() + Vec2(0, m_fWidgetSpacing));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, lastitem->getContentSize().height)));
+					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
+					item->setPosition(lastItem->getPosition() + Vec2(0, fAverage));
 				}
 
 				if (item->getPositionY() + m_fHorizontalMargin > _innerContainer->getContentSize().height) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(lastitem->getPositionX() + m_fLineSpacing, m_fHorizontalMargin));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(lastItem->getPositionX() + m_fLineSpacing, m_fHorizontalMargin));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
-		case lly::TABLEVIEW_GRAVITY_RIGHT_BOTTOM:
-			if (nIndex == 0)
+		case ETableViewGravity::RIGHT_BOTTOM:
+			if (lastItem == nullptr)
 			{
-				item->setPosition(ccp(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fVerticalMargin));
-				m_arHeadNode.push_back(item); //行头
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fVerticalMargin));
+				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				if (lastitem == NULL) lastitem = getItem(nIndex - 1);
-
 				//把位置放到上一个控件往左边增加一定距离的地方
-				if (m_Ltype == TABLEVIEW_LAYOUT_TYPE_ABSOLUTE)
+				if (m_eLayoutType == ABSOLUTE)
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, m_fWidgetSpacing)));
+					item->setPosition(lastItem->getPosition() + Vec2(0, m_fWidgetSpacing));
 				}
 				else
 				{
-					item->setPosition(ccpAdd(lastitem->getPosition(), ccp(0, lastitem->getContentSize().height)));
+					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
+					item->setPosition(lastItem->getPosition() + Vec2(0, fAverage));
 				}
 
 				if (item->getPositionY() + m_fHorizontalMargin > _innerContainer->getContentSize().height) //如果超出了一行的宽度，就换行
 				{
-					item->setPosition(ccp(lastitem->getPositionX() - m_fLineSpacing, m_fHorizontalMargin));
-					m_arHeadNode.push_back(item); //行头
+					item->setPosition(Vec2(lastItem->getPositionX() - m_fLineSpacing, m_fHorizontalMargin));
+					m_arHeadNode.pushBack(item); //行头
 				}
 			}
 			break;
@@ -496,17 +485,29 @@ void lly::TableView::remedyLayoutParameter( cocos2d::ui::Widget* item )
 	}
 
 	//把自己作为下个控件的上一个控件
-	lastWidget = item;
+	lastItem = item;
 }
 
 cocos2d::ui::Widget* lly::TableView::createCloneInstance()
 {
-
+	return  lly::TableView::create();
 }
 
-void lly::TableView::copySpecialProperties( cocos2d::ui::Widget* model )
+void lly::TableView::copySpecialProperties( cocos2d::ui::Widget* widget )
 {
-
+	lly::TableView* tableview = dynamic_cast<lly::TableView*>(widget);
+	if (tableview)
+	{
+		llyO::ListView::copySpecialProperties(widget);
+		setTableLayoutType(tableview->m_eLayoutType);
+		setTableViewGravity(tableview->m_eTVG);
+		setArrangementDirection(tableview->m_eArrangeDir);
+		setWidgetSpacing(tableview->m_fWidgetSpacing);
+		setLineSpacing(tableview->m_fLineSpacing);
+		setHorizontalMargin(tableview->m_fHorizontalMargin);
+		setVerticalMargin(tableview->m_fVerticalMargin);
+	}
 }
+
 
 

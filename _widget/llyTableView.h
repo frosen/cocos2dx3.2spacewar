@@ -13,9 +13,11 @@
 
 namespace lly{
 
-class TableView : llyO::ListView
+class TableView : public llyO::ListView
 {
 public:
+	DECLARE_CLASS_GUI_INFO
+
 	typedef enum  //布局方式，绝对布局比较横平竖直，相对布局用于文字等
 	{
 		ABSOLUTE,
@@ -48,9 +50,6 @@ public:
 	void setTableViewGravity(ETableViewGravity TVG);
 
 	virtual void setGravity(Gravity gravity) override; //重载
-
-	//设置书写方向（默认从左到右）
-	void setWriteOrder(EWriteOrder wo);
 
 	//设置排版方向
 	void setArrangementDirection(EArrangementDirection dir);
@@ -85,7 +84,6 @@ protected:
 
 	virtual cocos2d::ui::Widget* createCloneInstance() override;
 	virtual void copySpecialProperties(cocos2d::ui::Widget* model) override;
-
 protected:
 	cocos2d::Vector<cocos2d::Node*> m_arHeadNode; //每行头的widget
 	
@@ -99,6 +97,7 @@ protected:
 	float m_fHorizontalMargin; //默认30
 	float m_fVerticalMargin; //默认30
 
+	//temp
 	cocos2d::ui::Widget* lastItem; //refresh中，为提高效率用
 	bool bneedcheckindex; //refresh中，为提高效率用
 };
