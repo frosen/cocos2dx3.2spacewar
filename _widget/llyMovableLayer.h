@@ -32,18 +32,14 @@ public:
 
 	struct isHitted //记录触点是否点中
 	{
-		bool bPoint2exist;
-		bool bPoint2Hitted;
-		cocos2d::Vec2 oldAnchor;
-		cocos2d::Vec2 firstTouchPoint;
-		cocos2d::Vec2 secondTouchPoint;
+		char nNumHittedPoint;
+		cocos2d::Vec2 anchorOld;
+		cocos2d::Vec2 posNewAnchor;
 		isHitted() {}
-		isHitted(bool b1, bool b2, cocos2d::Vec2 vec, cocos2d::Vec2 vec1, cocos2d::Vec2 vec2) : 
-			bPoint2exist(b1), 
-			bPoint2Hitted(b2), 
-			oldAnchor(vec), 
-			firstTouchPoint(vec1),
-			secondTouchPoint(vec2) {}
+		isHitted(char NumHittedPoint, cocos2d::Vec2 oldAnchor, cocos2d::Vec2 newAnchorPoint) : 
+			nNumHittedPoint(NumHittedPoint),
+			anchorOld(oldAnchor), 
+			posNewAnchor(newAnchorPoint) {}
 	};
 	
 	//给node增加功能
@@ -53,6 +49,34 @@ public:
 	static void refresh(cocos2d::Node* node = nullptr);
 
 private:
+	static void touchBeginWithChangeAnchor(
+		const std::vector<cocos2d::Touch*> &vTouch, 
+		cocos2d::Event* event, 
+		cocos2d::Node* node, 
+		bool needChangeAnchor);
+
+	static void touchMoveHasWidgetMove(
+		const std::vector<cocos2d::Touch*> &vTouch, 
+		cocos2d::Event* event, 
+		cocos2d::Node* node, 
+		TouchesCallback moveMoved, 
+		TouchesCallback scaleMoved, 
+		TouchesCallback rotateMoved);
+												  
+	static void touchMoveWithoutWidgetMove(
+		const std::vector<cocos2d::Touch*> &vTouch, 
+		cocos2d::Event* event,
+		cocos2d::Node* node, 
+		TouchesCallback moveMoved, 
+		TouchesCallback scaleMoved, 
+		TouchesCallback rotateMoved);
+
+	static void touchEndWithChangeAnchor(
+		const std::vector<cocos2d::Touch*> &vTouch, 
+		cocos2d::Event* event, 
+		cocos2d::Node* node, 
+		bool needChangeAnchor);
+
 	//触点是否击中了node
 	static bool containsPoint(cocos2d::Node* node, cocos2d::Vec2 point);
 
