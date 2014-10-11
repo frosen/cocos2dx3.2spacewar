@@ -103,16 +103,14 @@ protected:
 
 	std::vector<DirectionRatio> m_vDirRatio; //比率列表
 
-	struct value_Dir
+	struct value_Dir //x,y轴比例在一定范围内对应的矢量
 	{
 		EnDirection e1;
 		EnDirection e2;
-		float rateMax; //比这个小，则等于上面的值	
+		float rateMax; ///x,y轴比例比这个小，则两轴矢量等于上面的值	
 		value_Dir() {}
 		value_Dir(float f, EnDirection e1, EnDirection e2) : rateMax(f), e1(e1), e2(e2) {}
-	};
-	
-	value_Dir v_vD[10];
+	} v_vD[10]; 
 
 	int m_nPrecison; //灵敏度
 	float m_fPrecision22p5; //灵敏度切分量
