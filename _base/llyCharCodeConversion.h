@@ -12,14 +12,7 @@
 
 namespace lly{
 
-//全局static：只能本文件使用
-static bool iconvert( 
-	const char* from_charset, 
-	const char* to_charset, 
-	const char* inbuf, 
-	int inlen, 
-	char* outbuf, 
-	int outlen);
+static bool iconvert(const char* from_charset, const char* to_charset, const char* inbuf, int inlen, char* outbuf, int outlen);
 
 std::string convertGBKToUTF8(const std::string& str);
 

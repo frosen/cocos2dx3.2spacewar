@@ -57,7 +57,7 @@ bool lly::AngleToVec::init()
 	return true;
 }
 
-//=================================================
+//==========================================
 lly::AngleVec lly::getVecFrom2Points( float x, float y, float xOrig, float yOrig )
 {
 	float xd = x - xOrig;
