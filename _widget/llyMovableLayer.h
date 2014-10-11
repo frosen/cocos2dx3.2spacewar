@@ -39,9 +39,7 @@ public:
 		cocos2d::Vec2 secondTouchPoint;
 		isHitted() {}
 		isHitted(bool b1, bool b2, cocos2d::Vec2 vec, cocos2d::Vec2 vec1, cocos2d::Vec2 vec2) : 
-			bPoint2exist(b1), 
-			bPoint2Hitted(b2), 
-			oldAnchor(vec), 
+			bPoint2exist(b1), bPoint2Hitted(b2), oldAnchor(vec), 
 			firstTouchPoint(vec1),
 			secondTouchPoint(vec2) {}
 	};
@@ -57,15 +55,8 @@ private:
 	static bool containsPoint(cocos2d::Node* node, cocos2d::Vec2 point);
 
 	//改变锚点位置到第一触点，缩放和旋转以此为基点，记录原有锚点
-	static void changeAnchorToTouchPoint(
-		cocos2d::Node* node, 
-		const cocos2d::Vec2 &pointInNode, 
-		cocos2d::Vec2 &oldAnchor_out);
-
-	static void changeAnchorBack(
-		cocos2d::Node* node, 
-		const cocos2d::Vec2 &pointInNode, 
-		cocos2d::Vec2 &oldAnchor);
+	static void changeAnchorToTouchPoint(cocos2d::Node* node, const cocos2d::Vec2 &pointInNode, cocos2d::Vec2 &oldAnchor_out);
+	static void changeAnchorBack(cocos2d::Node* node, const cocos2d::Vec2 &pointInNode, cocos2d::Vec2 &oldAnchor);
 
 private:
 	//三种触摸功能
