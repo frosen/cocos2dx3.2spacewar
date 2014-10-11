@@ -37,13 +37,15 @@ std::string lly::convertGBKToUTF8( const std::string& str )
 {
 	char textOut[256];
 
-	return lly::iconvert("gb2312", "utf-8", str.c_str(), str.size(),textOut, 256) ? std::string(textOut) : std::string();
+	return lly::iconvert("gb2312", "utf-8", str.c_str(), str.size(),textOut, 256) ? 
+		std::string(textOut) : std::string();
 }
 
 std::string lly::convertUTF8ToGBK( const std::string& str )
 {
 	char textOut[256];
 
-	return lly::iconvert("utf-8", "gb2312", str.c_str(), str.size(), textOut, 256) ? std::string(textOut) : std::string();
+	return lly::iconvert("utf-8", "gb2312", str.c_str(), str.size(), textOut, 256) ? 
+		std::string(textOut) : std::string();
 }
 
