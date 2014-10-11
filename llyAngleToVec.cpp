@@ -55,9 +55,6 @@ static float yd;
 static lly::AngleVec AV;
 
 <<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
-=======
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 =======
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
