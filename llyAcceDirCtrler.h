@@ -82,7 +82,7 @@ protected:
 	virtual bool init();
 
 protected:
-	static AcceDirCtrler* m_ADCer; //데절
+	static AcceDirCtrler* s_ADCer; //데절
 
 	cocos2d::EventListenerAcceleration* listener;
 
