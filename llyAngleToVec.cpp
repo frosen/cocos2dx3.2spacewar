@@ -54,9 +54,6 @@ static float xd;
 static float yd;
 static lly::AngleVec AV;
 
-<<<<<<< HEAD
->>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
-=======
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 lly::AngleVec lly::getVecFrom2Points( float x, float y, float xOrig, float yOrig )
 {
