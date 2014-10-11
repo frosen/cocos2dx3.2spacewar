@@ -3,7 +3,7 @@
 
 using namespace lly;
 
-AngleToVec* lly::AngleToVec::s_A2V = nullptr;
+AngleToVec* lly::AngleToVec::m_A2V = nullptr;
 
 
 lly::AngleToVec::AngleToVec()
@@ -18,51 +18,47 @@ lly::AngleToVec::~AngleToVec()
 
 AngleToVec* lly::AngleToVec::getInstance()
 {
-	if (s_A2V == nullptr)
+	if (m_A2V == nullptr)
 	{
-		s_A2V = new AngleToVec();
-		if (!s_A2V || !s_A2V->init())
+		m_A2V = new AngleToVec();
+		if (!m_A2V || !m_A2V->init())
 		{
-			if(s_A2V) delete s_A2V;
-			s_A2V = nullptr;
+			if(m_A2V) delete m_A2V;
+			m_A2V = nullptr;
 			return nullptr;
 		}
 	}
-	return s_A2V;
+	return m_A2V;
 }
 
 void lly::AngleToVec::destroyInstance()
 {
-	if(s_A2V) delete s_A2V;
-	s_A2V = nullptr;
-}
-
-lly::AngleVec lly::AngleToVec::getVec( int angle )
-{
-	return AngleVec(m_fVec[angle], m_fVec[angle + 90]);
-}
-
-lly::AngleVec lly::AngleToVec::getVec( int angle, float distance )
-{
-	return AngleVec(m_fVec[angle] * distance, m_fVec[angle + 90] * distance);
+	if(m_A2V) delete m_A2V;
+	m_A2V = nullptr;
 }
 
 bool lly::AngleToVec::init()
 {
-	//³õÊ¼»¯0-360¶ÈµÄÊ¸Á¿Öµ£¬ÓÉÓÚÊ¸Á¿ÓÉx£¬y×é³É£¬ÎªÁË½ÚÊ¡¿Õ¼ä£¬ÔòÔØÈë0-450¶È£¬yÖáµÄÖµµÈÓÚxÖáÔö¼Ó90¶ÈµÄÖµ
-	for (int i = 0; i < 450; ++i) 
+	for (int i = 0; i < 450; ++i)
 	{
 		m_fVec[i] = sin(i * 3.14159f / 180);
 	}
 	return true;
 }
 
+<<<<<<< HEAD
 //=================================================
+=======
+//==========================================
+static float xd;
+static float yd;
+static lly::AngleVec AV;
+
+>>>>>>> parent of b3b9793... æ ¹æ®ä»£ç å¤§å…¨ä¸Šçš„å†…å®¹ï¼Œä¼˜åŒ–ä»£ç 
 lly::AngleVec lly::getVecFrom2Points( float x, float y, float xOrig, float yOrig )
 {
-	float xd = x - xOrig;
-	float yd = y - yOrig;
-	lly::AngleVec AV;
+	xd = x - xOrig;
+	yd = y - yOrig;
 	AV.x = 1 / sqrtf(yd * yd / (xd * xd) + 1); //±¾ÉísqrtµÄĞ§ÂÊÒÑ¾­·Ç³£¸ßÁË
 	AV.y = AV.x * yd / xd;
 	return AV;
@@ -70,9 +66,8 @@ lly::AngleVec lly::getVecFrom2Points( float x, float y, float xOrig, float yOrig
 
 lly::AngleVec lly::getVecFrom2Points( float x, float y, float xOrig, float yOrig, float dis )
 {
-	float xd = x - xOrig;
-	float yd = y - yOrig;
-	lly::AngleVec AV;
+	xd = x - xOrig;
+	yd = y - yOrig;
 	AV.x = dis / sqrtf(yd * yd / (xd * xd) + 1);  //±¾ÉísqrtµÄĞ§ÂÊÒÑ¾­·Ç³£¸ßÁË
 	AV.y = AV.x * yd / xd;
 	return AV; 

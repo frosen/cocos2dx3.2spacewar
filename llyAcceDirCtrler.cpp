@@ -7,7 +7,7 @@ using namespace lly;
 DirectionRatio::DirectionRatio( float xx, float yy ) : x(xx), y(yy) {}
 
 //µ¥Àý
-AcceDirCtrler* AcceDirCtrler::s_ADCer = nullptr;
+AcceDirCtrler* AcceDirCtrler::m_ADCer = nullptr;
 
 AcceDirCtrler::AcceDirCtrler() : 
 	_fXorignal(0.0f), 
@@ -26,21 +26,21 @@ AcceDirCtrler::~AcceDirCtrler()
 
 AcceDirCtrler* AcceDirCtrler::getInstance()
 {
-	if (s_ADCer == nullptr)
+	if (m_ADCer == nullptr)
 	{
-		s_ADCer = new AcceDirCtrler();
-		if (!s_ADCer || !s_ADCer->init())
+		m_ADCer = new AcceDirCtrler();
+		if (!m_ADCer || !m_ADCer->init())
 		{
-			CC_SAFE_DELETE(s_ADCer);
+			CC_SAFE_DELETE(m_ADCer);
 			return nullptr;
 		}
 	}
-	return s_ADCer;
+	return m_ADCer;
 }
 
 void AcceDirCtrler::destroyInstance()
 {
-	CC_SAFE_DELETE(s_ADCer);
+	CC_SAFE_DELETE(m_ADCer);
 }
 
 void AcceDirCtrler::start()
