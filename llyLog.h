@@ -36,7 +36,11 @@
 #define llyReturn_false_ifNot(_CLASS_)\
 	if(!_CLASS_) { \
 <<<<<<< HEAD
+<<<<<<< HEAD
 	LLY_LOG_CUR_LOC("@wrong"); \
+=======
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+>>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 =======
 	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
@@ -46,7 +50,11 @@
 #define llyReturn_ifNot(_CLASS_)\
 	if(!_CLASS_){ \
 <<<<<<< HEAD
+<<<<<<< HEAD
 	LLY_LOG_CUR_LOC("@wrong"); \
+=======
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+>>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 =======
 	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
@@ -56,7 +64,11 @@
 #define llyReturn_false_if(_CLASS_)\
 	if(_CLASS_) { \
 <<<<<<< HEAD
+<<<<<<< HEAD
 	LLY_LOG_CUR_LOC("@wrong"); \
+=======
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+>>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 =======
 	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
@@ -66,7 +78,11 @@
 #define llyReturn_if(_CLASS_)\
 	if(_CLASS_){ \
 <<<<<<< HEAD
+<<<<<<< HEAD
 	LLY_LOG_CUR_LOC("@wrong"); \
+=======
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
+>>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 =======
 	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 >>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
@@ -74,6 +90,7 @@
 
 //=====================================================
 //������ȷ����
+<<<<<<< HEAD
 <<<<<<< HEAD
 #define LLY_RETURN_TRUE_FOR_SUCCESS \
 	LLY_LOG_CUR_LOC("right excute"); \
@@ -86,6 +103,19 @@
 #define LLY_RETURN_FOR_FAIL \
 	LLY_LOG_CUR_LOC("@wrong excute"); \
 	return
+=======
+#define llyReturn_true_for_success \
+	cocos2d::log("right excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	return true; 
+				
+#define llyReturn_false_for_fail \
+	cocos2d::log("@wrong excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	return false;
+
+#define llyReturn_for_fail \
+	cocos2d::log("@wrong excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	return;
+>>>>>>> parent of b3b9793... 根据代码大全上的内容，优化代码
 =======
 #define llyReturn_true_for_success \
 	cocos2d::log("right excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
