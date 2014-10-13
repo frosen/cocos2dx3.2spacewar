@@ -3,7 +3,6 @@
 内容：新的ListView
 			llyO中的listview和原版一致，其中有些函数变成虚函数为了继承，包括
 			pushBackDefaultItem to removeAllItems
-			setGravity
 			updateInnerContainerSize
 			remedyLayoutParameter
 			添加动画
@@ -21,7 +20,7 @@
 #include "llyScrollView.h"  //修改
 #include "cocos2d.h"  //修改
 
-namespace llyO{
+namespace llyO_for_lly_listview{
 
 typedef enum
 {
@@ -141,7 +140,7 @@ public:
      * Changes the gravity of listview.
      * @see ListViewGravity
      */
-    virtual void setGravity(Gravity gravity);
+    void setGravity(Gravity gravity);
     
     /**
      * Changes the margin between each item.
@@ -186,8 +185,8 @@ CC_CONSTRUCTOR_ACCESS:
     virtual bool init() override;
     
 protected:    
-    virtual void updateInnerContainerSize();
-    virtual void remedyLayoutParameter(cocos2d::ui::Widget* item);
+    virtual void updateInnerContainerSize(); //修改
+    virtual void remedyLayoutParameter(cocos2d::ui::Widget* item); //修改
     virtual void onSizeChanged() override;
     virtual cocos2d::ui::Widget* createCloneInstance() override;
     virtual void copySpecialProperties(cocos2d::ui::Widget* model) override;
@@ -222,14 +221,14 @@ protected:
     ccListViewCallback _eventCallback;
 };
 
-} //llyO
+} //llyO_for_lly_listview
 
 
 //新listview
 
 namespace lly{
 
-class ListView : llyO::ListView
+class ListView : llyO_for_lly_listview::ListView
 {
 	DECLARE_CLASS_GUI_INFO
 

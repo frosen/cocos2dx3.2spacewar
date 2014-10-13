@@ -5,7 +5,7 @@
 USING_NS_CC;
 using namespace ui;
 
-namespace llyO {
+namespace llyO_for_lly_listview {
     
 IMPLEMENT_CLASS_GUI_INFO(ListView)
 
@@ -65,160 +65,12 @@ void ListView::setItemModel(Widget *model)
 
 void ListView::updateInnerContainerSize()
 {
-    switch (_direction)
-    {
-        case Direction::VERTICAL:
-        {
-            size_t length = _items.size();
-            float totalHeight = (length - 1) * _itemsMargin;
-            for (auto& item : _items)
-            {
-                totalHeight += item->getContentSize().height;
-            }
-            float finalWidth = _contentSize.width;
-            float finalHeight = totalHeight;
-            setInnerContainerSize(Size(finalWidth, finalHeight));
-            break;
-        }
-        case Direction::HORIZONTAL:
-        {
-            size_t length = _items.size();
-            float totalWidth = (length - 1) * _itemsMargin;
-            for (auto& item : _items)
-            {
-                totalWidth += item->getContentSize().width;
-            }
-            float finalWidth = totalWidth;
-            float finalHeight = _contentSize.height;
-            setInnerContainerSize(Size(finalWidth, finalHeight));
-            break;
-        }
-        default:
-            break;
-    }
+	//已经重载于lly::ListView
 }
 
 void ListView::remedyLayoutParameter(Widget *item)
 {
-    if (!item)
-    {
-        return;
-    }
-    switch (_direction) {
-        case Direction::VERTICAL:
-        {
-            LinearLayoutParameter* llp = (LinearLayoutParameter*)(item->getLayoutParameter());
-            if (!llp)
-            {
-                LinearLayoutParameter* defaultLp = LinearLayoutParameter::create();
-                switch (_gravity) {
-                    case Gravity::LEFT:
-                        defaultLp->setGravity(LinearLayoutParameter::LinearGravity::LEFT);
-                        break;
-                    case Gravity::RIGHT:
-                        defaultLp->setGravity(LinearLayoutParameter::LinearGravity::RIGHT);
-                        break;
-                    case Gravity::CENTER_HORIZONTAL:
-                        defaultLp->setGravity(LinearLayoutParameter::LinearGravity::CENTER_HORIZONTAL);
-                        break;
-                    default:
-                        break;
-                }
-                if (getIndex(item) == 0)
-                {
-                    defaultLp->setMargin(Margin::ZERO);
-                }
-                else
-                {
-                    defaultLp->setMargin(Margin(0.0f, _itemsMargin, 0.0f, 0.0f));
-                }
-                item->setLayoutParameter(defaultLp);
-            }
-            else
-            {
-                if (getIndex(item) == 0)
-                {
-                    llp->setMargin(Margin::ZERO);
-                }
-                else
-                {
-                    llp->setMargin(Margin(0.0f, _itemsMargin, 0.0f, 0.0f));
-                }
-                switch (_gravity) {
-                    case Gravity::LEFT:
-                        llp->setGravity(LinearLayoutParameter::LinearGravity::LEFT);
-                        break;
-                    case Gravity::RIGHT:
-                        llp->setGravity(LinearLayoutParameter::LinearGravity::RIGHT);
-                        break;
-                    case Gravity::CENTER_HORIZONTAL:
-                        llp->setGravity(LinearLayoutParameter::LinearGravity::CENTER_HORIZONTAL);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            break;
-        }
-        case Direction::HORIZONTAL:
-        {
-            LinearLayoutParameter* llp = (LinearLayoutParameter*)(item->getLayoutParameter());
-            if (!llp)
-            {
-                LinearLayoutParameter* defaultLp = LinearLayoutParameter::create();
-                switch (_gravity) {
-                    case Gravity::TOP:
-                        defaultLp->setGravity(LinearLayoutParameter::LinearGravity::TOP);
-                        break;
-                    case Gravity::BOTTOM:
-                        defaultLp->setGravity(LinearLayoutParameter::LinearGravity::BOTTOM);
-                        break;
-                    case Gravity::CENTER_VERTICAL:
-                        defaultLp->setGravity(LinearLayoutParameter::LinearGravity::CENTER_VERTICAL);
-                        break;
-                    default:
-                        break;
-                }
-                if (getIndex(item) == 0)
-                {
-                    defaultLp->setMargin(Margin::ZERO);
-                }
-                else
-                {
-                    defaultLp->setMargin(Margin(_itemsMargin, 0.0f, 0.0f, 0.0f));
-                }
-                item->setLayoutParameter(defaultLp);
-            }
-            else
-            {
-                if (getIndex(item) == 0)
-                {
-                    llp->setMargin(Margin::ZERO);
-                }
-                else
-                {
-                    llp->setMargin(Margin(_itemsMargin, 0.0f, 0.0f, 0.0f));
-                }
-                switch (_gravity) {
-                    case Gravity::TOP:
-                        llp->setGravity(LinearLayoutParameter::LinearGravity::TOP);
-                        break;
-                    case Gravity::BOTTOM:
-                        llp->setGravity(LinearLayoutParameter::LinearGravity::BOTTOM);
-                        break;
-                    case Gravity::CENTER_VERTICAL:
-                        llp->setGravity(LinearLayoutParameter::LinearGravity::CENTER_VERTICAL);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    
+	//已经重载于lly::ListView
 }
 
 void ListView::pushBackDefaultItem()
@@ -549,13 +401,11 @@ void ListView::copySpecialProperties(Widget *widget)
 
 
 //================================
-USING_NS_CC;
-using namespace ui;
 using namespace lly;
 
 IMPLEMENT_CLASS_GUI_INFO(lly::ListView)
 
-lly::ListView::ListView() : llyO::ListView(), 
+lly::ListView::ListView() : llyO_for_lly_listview::ListView(), 
 	//自添加 ============
 	m_bAnimation(false),
 	m_fWidgetMoveSpeed(1),
@@ -593,7 +443,7 @@ ListView* lly::ListView::create()
 
 void lly::ListView::pushBackDefaultItem()
 {
-	llyO::ListView::pushBackDefaultItem();
+	llyO_for_lly_listview::ListView::pushBackDefaultItem();
 	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
 }
 
@@ -626,14 +476,14 @@ void lly::ListView::insertDefaultItem(ssize_t index)
 	}
 	//===========================
 
-	llyO::ListView::insertDefaultItem(index);
+	llyO_for_lly_listview::ListView::insertDefaultItem(index);
 
 	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::pushBackCustomItem(Widget* item)
 {
-	llyO::ListView::pushBackCustomItem(item);
+	llyO_for_lly_listview::ListView::pushBackCustomItem(item);
 	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
 }
 
@@ -664,7 +514,7 @@ void lly::ListView::insertCustomItem(Widget* item, ssize_t index)
 	}
 	//===========================
 
-	llyO::ListView::insertCustomItem(item, index);
+	llyO_for_lly_listview::ListView::insertCustomItem(item, index);
 
 	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
 }
@@ -694,7 +544,7 @@ void ListView::removeItem(ssize_t index)
 	}
 	//===========================
 
-	llyO::ListView::removeItem(index);
+	llyO_for_lly_listview::ListView::removeItem(index);
 
 	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
 }
@@ -702,14 +552,14 @@ void ListView::removeItem(ssize_t index)
 void ListView::removeLastItem()
 {
 	if (m_targetItem == getLastItem()) m_targetItem = nullptr; //取消目标控件
-	llyO::ListView::removeLastItem();
+	llyO_for_lly_listview::ListView::removeLastItem();
 	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
 }
 
 void ListView::removeAllItems()
 {
 	if (m_targetItem) m_targetItem = nullptr; //取消目标控件
-	llyO::ListView::removeAllItems();
+	llyO_for_lly_listview::ListView::removeAllItems();
 	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
 }
 
@@ -1080,7 +930,7 @@ void lly::ListView::copySpecialProperties(Widget *widget)
 	lly::ListView* listViewEx = dynamic_cast<lly::ListView*>(widget);
 	if (listViewEx)
 	{
-		llyO::ListView::copySpecialProperties(listViewEx);
+		llyO_for_lly_listview::ListView::copySpecialProperties(listViewEx);
 		
 		m_bAnimation = listViewEx->m_bAnimation; //是否开启动画（默认不开启）
 		m_fWidgetMoveSpeed = listViewEx->m_fWidgetMoveSpeed; //控件动画移动的速度（默认每帧1像素）
@@ -1105,24 +955,50 @@ void lly::ListView::copyClonedWidgetChildren( cocos2d::ui::Widget* model )
 
 void lly::ListView::interceptTouchEvent(TouchEventType event, Widget *sender, Touch* touch)
 {
-	llyO::ListView::interceptTouchEvent(event, sender, touch);
-
-	m_targetItem = _items.at(_curSelectedIndex);
+	ScrollView::interceptTouchEvent(event, sender, touch);
 
 	switch (event)
 	{
-	case cocos2d::ui::Widget::TouchEventType::BEGAN:
-		_bMoved = false;
-		m_posBegintouch = touch->getLocation();
-		break;
 	case cocos2d::ui::Widget::TouchEventType::MOVED:
 		{
-			auto movePoint = touch->getLocation();
+			//若移动的距离大于一个量，则视为移动，而不响应touch结束
+			auto movePoint = touch->getLocation(); 
 			if (_bMoved == false && 
 				(abs(movePoint.x - m_posBegintouch.x) > m_posMaxMove.x || 
 				abs(movePoint.y - m_posBegintouch.y) > m_posMaxMove.y))
 				_bMoved = true;
 		}		
+		break;
+	case cocos2d::ui::Widget::TouchEventType::BEGAN:
+		//获得目标控件
+		m_targetItem = _items.at(_curSelectedIndex);
+
+		_bMoved = false;
+		m_posBegintouch = touch->getLocation();
+
+		//没有break
+
+	case cocos2d::ui::Widget::TouchEventType::ENDED:
+
+		if (_bMoved) break;
+
+		//============orig
+		{
+			Widget* parent = sender;
+			while (parent)
+			{
+				if (parent && parent->getParent() == _innerContainer)
+				{
+					_curSelectedIndex = getIndex(parent);
+					break;
+				}
+				parent = dynamic_cast<Widget*>(parent->getParent());
+			}
+			if (sender->isHighlighted()) {
+				selectedItemEvent(event);
+			}
+		}	
+		//===============
 		break;
 	default:
 		break;
@@ -1138,7 +1014,7 @@ void lly::ListView::changeWidgetEvent( ListViewchangeItem type )
 
 void ListView::visit( Renderer *renderer, const Mat4& parentTransform, bool parentTransformUpdated )
 {
-	llyO::ListView::visit(renderer, parentTransform, parentTransformUpdated);
+	llyO_for_lly_listview::ListView::visit(renderer, parentTransform, parentTransformUpdated);
 
 	//改变目标控件的z轴在最上
 	if (m_targetItem == nullptr || m_bChangeZOrder == false) return;

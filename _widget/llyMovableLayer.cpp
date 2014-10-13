@@ -19,57 +19,39 @@ void lly::TouchFunction::setTouchFunction( Node* node, uint32_t flag )
 	auto dispatcher = Director::getInstance()->getEventDispatcher();
 	auto listener = EventListenerTouchAllAtOnce::create();
 
-	//有三种不同的情况，只移动，只有大小变化或旋转，既有移动又有变化
+	//有三种不同的情况，只移动，只有大小变化或旋转，既有移动又有变化，分别对应不同的回调函数或回调函数的参数
 	if ( flag & TouchFunction::move && !(flag & TouchFunction::scale || flag & TouchFunction::rotate))
 	{
-		listener->onTouchesBegan = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchBeginWithChangeAnchor(vTouch, event, node, false);
-		};
+		listener->onTouchesBegan = std::bind(TouchFunction::touchBeginWithChangeAnchor, 
+			std::placeholders::_1, std::placeholders::_2, node, false);
 
-		listener->onTouchesMoved = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchMoveHasWidgetMove(vTouch, event, node, moveMoved, scaleMoved, rotateMoved);
-		};
+		listener->onTouchesMoved = std::bind(TouchFunction::touchMoveHasWidgetMove, 
+			std::placeholders::_1, std::placeholders::_2, node, moveMoved, scaleMoved, rotateMoved);
 
-		listener->onTouchesEnded = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchEndWithChangeAnchor(vTouch, event, node, false);
-		};
+		listener->onTouchesEnded = std::bind(TouchFunction::touchEndWithChangeAnchor, 
+			std::placeholders::_1, std::placeholders::_2, node, false);
 	}
 	else if (!(flag & TouchFunction::move) && (flag & TouchFunction::scale || flag & TouchFunction::rotate))
 	{
-		listener->onTouchesBegan = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchBeginWithChangeAnchor(vTouch, event, node, false);
-		};
+		listener->onTouchesBegan = std::bind(TouchFunction::touchBeginWithChangeAnchor, 
+			std::placeholders::_1, std::placeholders::_2, node, false);
 
-		listener->onTouchesMoved = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchMoveWithoutWidgetMove(vTouch, event, node, moveMoved, scaleMoved, rotateMoved);
-		};
+		listener->onTouchesMoved = std::bind(TouchFunction::touchMoveWithoutWidgetMove, 
+			std::placeholders::_1, std::placeholders::_2, node, moveMoved, scaleMoved, rotateMoved);
 
-		listener->onTouchesEnded = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchEndWithChangeAnchor(vTouch, event, node, false);
-		};
+		listener->onTouchesEnded = std::bind(TouchFunction::touchEndWithChangeAnchor, 
+			std::placeholders::_1, std::placeholders::_2, node, false);
 	}
 	else
 	{
-		listener->onTouchesBegan =[=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchBeginWithChangeAnchor(vTouch, event, node, true);
-		};
+		listener->onTouchesBegan = std::bind(TouchFunction::touchBeginWithChangeAnchor, 
+			std::placeholders::_1, std::placeholders::_2, node, true);
 
-		listener->onTouchesMoved = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchMoveHasWidgetMove(vTouch, event, node, moveMoved, scaleMoved, rotateMoved);
-		};
+		listener->onTouchesMoved = std::bind(TouchFunction::touchMoveHasWidgetMove, 
+			std::placeholders::_1, std::placeholders::_2, node, moveMoved, scaleMoved, rotateMoved);
 
-		listener->onTouchesEnded = [=](const std::vector<Touch*> &vTouch, Event* event)
-		{
-			touchEndWithChangeAnchor(vTouch, event, node, true);
-		};
+		listener->onTouchesEnded = std::bind(TouchFunction::touchEndWithChangeAnchor, 
+			std::placeholders::_1, std::placeholders::_2, node, true);
 	}
 
 	listener->onTouchesCancelled = [=](const std::vector<Touch*> &vTouch, Event* event)
@@ -107,7 +89,6 @@ void lly::TouchFunction::refresh( cocos2d::Node* node /*= nullptr*/ )
 
 void lly::TouchFunction::touchBeginWithChangeAnchor( const std::vector<cocos2d::Touch*> &vTouch, cocos2d::Event* event, cocos2d::Node* node, bool needChangeAnchor )
 {
-	log("touch");
 	Vec2 firstpoint = vTouch[0]->getLocation(); 
 	Vec2 touchpointInNode = node->convertToNodeSpace(firstpoint);
 
@@ -116,22 +97,20 @@ void lly::TouchFunction::touchBeginWithChangeAnchor( const std::vector<cocos2d::
 	auto it = mNodeIsHitted.find(node);
 	if (it == mNodeIsHitted.end()) //把第一点是否点中的消息通过map传递给move函数
 	{
-		log("touch 1");
 		if (needChangeAnchor) //把锚点移动到触点
 		{
 			Vec2 pointOldAnchor; //记录原来的锚点用
 			changeAnchorToTouchPoint(node, touchpointInNode, pointOldAnchor);
 
-			mNodeIsHitted[node] = isHitted(1, pointOldAnchor, firstpoint);			
+			mNodeIsHitted[node] = struTouchNodeInfo(1, pointOldAnchor);			
 		}
 		else
 		{			
-			mNodeIsHitted[node] = isHitted(1, node->getAnchorPoint(), node->getAnchorPointInPoints());
+			mNodeIsHitted[node] = struTouchNodeInfo(1, node->getAnchorPoint());
 		}			
 	}	
 	else if (it->second.nNumHittedPoint == 1) //node存在时，在此判断第二点是否点击中，若存在则不再判断第三点
 	{
-		log("touch 2");
 		Vec2 secondPoint = vTouch[0]->getLocation();
 		Vec2 secondPointInNode = node->convertToNodeSpace(secondPoint);
 
@@ -139,15 +118,13 @@ void lly::TouchFunction::touchBeginWithChangeAnchor( const std::vector<cocos2d::
 
 		if (!needChangeAnchor) //把锚点移动到触点
 		{
-			Vec2 pointOrigAnchor = node->convertToNodeSpace(it->second.posNewAnchor);
-			changeAnchorBack(node, pointOrigAnchor, it->second.anchorOld);
+			changeAnchorBack(node, it->second.anchorOld);
 
 			Vec2 pointOldAnchor; //记录原来的锚点用
 			Vec2 secondPointInNode_2 = node->convertToNodeSpace(secondPoint); //node变化，重新求出节点中位置
 			changeAnchorToTouchPoint(node, secondPointInNode_2, pointOldAnchor);
 
 			it->second.anchorOld = pointOldAnchor;
-			it->second.posNewAnchor = secondPoint;
 		}
 	}
 	else
@@ -203,7 +180,7 @@ void lly::TouchFunction::touchEndWithChangeAnchor( const std::vector<cocos2d::To
 {
 	auto it = mNodeIsHitted.find(node);
 	if (it == mNodeIsHitted.end()) return; //保证node在map里是存在的	
-	log("end");
+
 	Vec2 endPoint = vTouch[0]->getLocation();
 	Vec2 endPointInNode = node->convertToNodeSpace(endPoint);
 
@@ -211,18 +188,15 @@ void lly::TouchFunction::touchEndWithChangeAnchor( const std::vector<cocos2d::To
 	
 	if (it->second.nNumHittedPoint >= 2) //第n点点中
 	{
-		log("end 3");
 		it->second.nNumHittedPoint -= 1;
 	}
 	else if (it->second.nNumHittedPoint == 1)
 	{
-		log("end 1");
 		//===================
 		if (needChangeAnchor)
 		{
 			Vec2 oldAnchor = it->second.anchorOld;
-			Vec2 pointOrigAnchor = node->convertToNodeSpace(it->second.posNewAnchor);
-			changeAnchorBack(node, pointOrigAnchor, oldAnchor);
+			changeAnchorBack(node, oldAnchor);
 		}
 		//=====================
 
@@ -230,7 +204,6 @@ void lly::TouchFunction::touchEndWithChangeAnchor( const std::vector<cocos2d::To
 	}
 	else
 	{
-		log("end 0");
 		mNodeIsHitted.erase(node); //其他情况则重置node的触点控制
 	}
 
@@ -271,7 +244,7 @@ void lly::TouchFunction::changeAnchorToTouchPoint( cocos2d::Node* node, const co
 	node->setPosition(node->getPosition() + pointChange);
 }
 
-void lly::TouchFunction::changeAnchorBack( cocos2d::Node* node, const cocos2d::Vec2 &pointInNode, cocos2d::Vec2 &oldAnchor )
+void lly::TouchFunction::changeAnchorBack( cocos2d::Node* node, cocos2d::Vec2 &oldAnchor )
 {
 	//获取相对老点，新点偏移的距离
 	Vec2 pointNewAnchor = node->getAnchorPoint(); 
@@ -342,7 +315,7 @@ lly::TouchFunction::TouchesCallback lly::TouchFunction::m_rotateMoved =
 };
 
 //静态变量的初始化
-std::map <cocos2d::Node*, TouchFunction::isHitted> lly::TouchFunction::mNodeIsHitted = std::map <cocos2d::Node*, TouchFunction::isHitted>(); 
+std::map <cocos2d::Node*, TouchFunction::struTouchNodeInfo> lly::TouchFunction::mNodeIsHitted = std::map <cocos2d::Node*, TouchFunction::struTouchNodeInfo>(); 
 
 //===========================================================
 lly::MovableLayer::MovableLayer() : Layer()

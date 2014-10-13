@@ -29,18 +29,6 @@ public:
 		scale = 2,
 		rotate = 4,
 	};
-
-	struct isHitted //记录触点是否点中
-	{
-		char nNumHittedPoint;
-		cocos2d::Vec2 anchorOld;
-		cocos2d::Vec2 posNewAnchor;
-		isHitted() {}
-		isHitted(char NumHittedPoint, cocos2d::Vec2 oldAnchor, cocos2d::Vec2 newAnchorPoint) : 
-			nNumHittedPoint(NumHittedPoint),
-			anchorOld(oldAnchor), 
-			posNewAnchor(newAnchorPoint) {}
-	};
 	
 	//给node增加功能
 	static void setTouchFunction(cocos2d::Node* node, uint32_t flag); 
@@ -48,7 +36,7 @@ public:
 	//刷新node null为刷新全部
 	static void refresh(cocos2d::Node* node = nullptr);
 
-private:
+protected:
 	static void touchBeginWithChangeAnchor(
 		const std::vector<cocos2d::Touch*> &vTouch, 
 		cocos2d::Event* event, 
@@ -88,17 +76,26 @@ private:
 
 	static void changeAnchorBack(
 		cocos2d::Node* node, 
-		const cocos2d::Vec2 &pointInNode, 
 		cocos2d::Vec2 &oldAnchor);
 
-private:
+protected:
 	//三种触摸功能
 	static TouchesCallback m_moveMoved; //点击移动
 	static TouchesCallback m_scaleMoved; //两点开合改变大小
 	static TouchesCallback m_rotateMoved; //两点扭错旋转图	
 
+	struct struTouchNodeInfo //记录触点是否点中等信息的结构体
+	{
+		char nNumHittedPoint;
+		cocos2d::Vec2 anchorOld;
+		struTouchNodeInfo() {}
+		struTouchNodeInfo(char NumHittedPoint, cocos2d::Vec2 oldAnchor) : 
+			nNumHittedPoint(NumHittedPoint),
+			anchorOld(oldAnchor) {}
+	};
+
 	//记录当前node和是否点击，在bengin，move，end间传递消息
-	static std::map <cocos2d::Node*, isHitted> mNodeIsHitted; 
+	static std::map <cocos2d::Node*, struTouchNodeInfo> mNodeIsHitted; 
 };
 
 class MovableLayer : public cocos2d::Layer
