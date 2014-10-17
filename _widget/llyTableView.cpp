@@ -388,13 +388,14 @@ IMPLEMENT_CLASS_GUI_INFO(lly::TableView)
 
 lly::TableView::TableView() : 
 	llyO_for_lly_tableview::ListView(),
-	m_eLayoutType(ABSOLUTE),
-	m_eTVG(LEFT_TOP),
-	m_eArrangeDir(HORIZONTAL),
+	m_eLayoutType(ELayoutType::ABSOLUTE),
+	m_eTVG(ETableViewGravity::LEFT_TOP),
+	m_eArrangeDir(EArrangementDirection::HORIZONTAL),
 	m_fWidgetSpacing(20),
 	m_fLineSpacing(20),
 	m_fHorizontalMargin(30),
-	m_fVerticalMargin(30),
+	m_fTopMargin(40),
+	m_fBottomMargin(20),
 	lastItem(nullptr),
 	bneedcheckindex(true),
 	m_posMaxMove(Vec2(5, 5)),
@@ -442,22 +443,22 @@ void lly::TableView::setGravity( Gravity gravity )
 	switch (gravity)
 	{
 	case llyO_for_lly_tableview::ListView::Gravity::LEFT:
-		setTableViewGravity(LEFT_TOP);
+		setTableViewGravity(ETableViewGravity::LEFT_TOP);
 		break;
 	case llyO_for_lly_tableview::ListView::Gravity::RIGHT:
-		setTableViewGravity(RIGHT_TOP);
+		setTableViewGravity(ETableViewGravity::RIGHT_TOP);
 		break;
 	case llyO_for_lly_tableview::ListView::Gravity::CENTER_HORIZONTAL:
-		setTableViewGravity(LEFT_TOP);
+		setTableViewGravity(ETableViewGravity::LEFT_TOP);
 		break;
 	case llyO_for_lly_tableview::ListView::Gravity::TOP:
-		setTableViewGravity(LEFT_TOP);
+		setTableViewGravity(ETableViewGravity::LEFT_TOP);
 		break;
 	case llyO_for_lly_tableview::ListView::Gravity::BOTTOM:
-		setTableViewGravity(LEFT_BOTTOM);
+		setTableViewGravity(ETableViewGravity::LEFT_BOTTOM);
 		break;
 	case llyO_for_lly_tableview::ListView::Gravity::CENTER_VERTICAL:
-		setTableViewGravity(LEFT_TOP);
+		setTableViewGravity(ETableViewGravity::LEFT_TOP);
 		break;
 	default:
 		break;
@@ -489,10 +490,10 @@ void lly::TableView::setDirection( Direction dir )
 	switch (dir)
 	{
 	case ScrollView::Direction::VERTICAL:
-		setArrangementDirection(HORIZONTAL);
+		setArrangementDirection(EArrangementDirection::HORIZONTAL);
 		break;
 	case ScrollView::Direction::HORIZONTAL:
-		setArrangementDirection(VERTICAL);
+		setArrangementDirection(EArrangementDirection::VERTICAL);
 		break;
 	default:
 		break;
@@ -520,10 +521,17 @@ void lly::TableView::setHorizontalMargin(float fMargin)
 	_refreshViewDirty = true;
 }
 
-void lly::TableView::setVerticalMargin(float fMargin)
+void lly::TableView::setTopMargin( float fMargin )
 {
-	if (m_fVerticalMargin == fMargin) return;
-	m_fVerticalMargin = fMargin;
+	if (m_fTopMargin == fMargin) return;
+	m_fTopMargin = fMargin;
+	_refreshViewDirty = true;
+}
+
+void lly::TableView::setBottomMargin( float fMargin )
+{
+	if (m_fBottomMargin == fMargin) return;
+	m_fBottomMargin = fMargin;
 	_refreshViewDirty = true;
 }
 
@@ -568,12 +576,12 @@ void lly::TableView::updateInnerContainerSize()
 	case EArrangementDirection::HORIZONTAL: 
 		{
 			//第一个控件到最后一个控件的垂直长度加上两边留白的总距离
-			float f = abs(getItem(0)->getPositionY() - getLastItem()->getPositionY()) + 2 * m_fVerticalMargin;
+			float f = abs(getItem(0)->getPositionY() - getLastItem()->getPositionY()) + m_fTopMargin + m_fBottomMargin;
 			if (f > _contentSize.height && f != _innerContainer->getContentSize().height )
 			{
 				setInnerContainerSize(CCSize( _contentSize.width, f ));
 
-				if (m_eTVG == LEFT_TOP || m_eTVG == RIGHT_TOP)
+				if (m_eTVG == ETableViewGravity::LEFT_TOP || m_eTVG == ETableViewGravity::RIGHT_TOP)
 				{
 					float fDistance = 0.0f;
 					bool first = true;
@@ -584,7 +592,7 @@ void lly::TableView::updateInnerContainerSize()
 						if (first)
 						{
 							float fORI = item->getPositionY();
-							item->setPositionY(_innerContainer->getContentSize().height - m_fVerticalMargin);
+							item->setPositionY(_innerContainer->getContentSize().height - m_fTopMargin);
 							fDistance = item->getPositionY() - fORI;
 						}
 						else
@@ -599,13 +607,13 @@ void lly::TableView::updateInnerContainerSize()
 	case EArrangementDirection::VERTICAL:
 		{
 			//第一个控件到最后一个控件的水平长度加上两边留白的总距离
-			float f = abs(getItem(0)->getPositionX() - getLastItem()->getPositionX()) + 2 * m_fVerticalMargin;
+			float f = abs(getItem(0)->getPositionX() - getLastItem()->getPositionX()) + m_fTopMargin + m_fBottomMargin;
 
 			if (f >= _contentSize.width && f != _innerContainer->getContentSize().width )
 			{
 				setInnerContainerSize(CCSize( f, _contentSize.height ));
 
-				if (m_eTVG == RIGHT_TOP || m_eTVG == RIGHT_BOTTOM)
+				if (m_eTVG == ETableViewGravity::RIGHT_TOP || m_eTVG == ETableViewGravity::RIGHT_BOTTOM)
 				{
 					float fDistance = 0.0f;
 					bool first = true;
@@ -616,7 +624,7 @@ void lly::TableView::updateInnerContainerSize()
 						if (first)
 						{
 							float fORI = item->getPositionX();
-							item->setPositionX(_innerContainer->getContentSize().width - m_fVerticalMargin);
+							item->setPositionX(_innerContainer->getContentSize().width - m_fTopMargin);
 							fDistance = item->getPositionX() - fORI;
 						}
 						else
@@ -652,20 +660,20 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::LEFT_TOP: //左上
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				item->setPosition(Vec2(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fTopMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往右增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() + Vec2(m_fWidgetSpacing, 0));
+					item->setPositionX(lastItem->getPositionX() + m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
-					item->setPosition(lastItem->getPosition() + Vec2(fAverage, 0));
+					float fAverage = (lastItem->getContentSize().width + item->getContentSize().width) / 2;
+					item->setPositionX(lastItem->getPositionX() + fAverage);
 				}
 
 				if (item->getPositionX() + m_fHorizontalMargin > _innerContainer->getContentSize().width || 
@@ -679,20 +687,20 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::RIGHT_TOP:
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fTopMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往左边增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() - Vec2(m_fWidgetSpacing, 0));
+					item->setPositionX(lastItem->getPositionX() - m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
-					item->setPosition(lastItem->getPosition() - Vec2(fAverage, 0));
+					float fAverage = (lastItem->getContentSize().width + item->getContentSize().width) / 2;
+					item->setPositionX(lastItem->getPositionX() - fAverage);
 				}
 
 				if (item->getPositionX() - m_fHorizontalMargin < 0 || isNewLineSymbol(lastItem)) //如果超出了一行的宽度或遇到换行符，就换行
@@ -705,20 +713,20 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::LEFT_BOTTOM:
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(m_fHorizontalMargin, m_fVerticalMargin));
+				item->setPosition(Vec2(m_fHorizontalMargin, m_fTopMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往右增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() + Vec2(m_fWidgetSpacing, 0));
+					item->setPositionX(lastItem->getPositionX() + m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
-					item->setPosition(lastItem->getPosition() + Vec2(fAverage, 0));
+					float fAverage = (lastItem->getContentSize().width + item->getContentSize().width) / 2;
+					item->setPositionX(lastItem->getPositionX() + fAverage);
 				}
 
 				if (item->getPositionX() + m_fHorizontalMargin > _innerContainer->getContentSize().width || 
@@ -732,20 +740,20 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::RIGHT_BOTTOM:
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fVerticalMargin));
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fTopMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往左边增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() - Vec2(-m_fWidgetSpacing, 0));
+					item->setPositionX(lastItem->getPositionX() - m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().width / 2 + item->getContentSize().width / 2;
-					item->setPosition(lastItem->getPosition() - Vec2(lastItem->getContentSize().width, 0));
+					float fAverage = (lastItem->getContentSize().width + item->getContentSize().width) / 2;
+					item->setPositionX(lastItem->getPositionX() - fAverage);
 				}
 
 				if (item->getPositionX() - m_fHorizontalMargin < 0 || isNewLineSymbol(lastItem)) //如果超出了一行的宽度或遇到换行符，就换行
@@ -766,25 +774,25 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::LEFT_TOP: //左上
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				item->setPosition(Vec2(m_fTopMargin, _innerContainer->getContentSize().height - m_fHorizontalMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//把位置放到上一个控件往右增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				//把位置放到上一个控件往下增加一定距离的地方
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() - Vec2(0, m_fWidgetSpacing));
+					item->setPositionY(lastItem->getPositionY() - m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
-					item->setPosition(lastItem->getPosition() - Vec2(0, fAverage));
+					float fAverage = (lastItem->getContentSize().height + item->getContentSize().height) / 2;
+					item->setPositionY(lastItem->getPositionY() - fAverage);
 				}
 
 				if (item->getPositionY() - m_fHorizontalMargin < 0 || isNewLineSymbol(lastItem)) //如果超出了一行的宽度或遇到换行符，就换行
 				{
-					item->setPosition(Vec2(lastItem->getPositionX() + m_fLineSpacing, _innerContainer->getContentSize().height - m_fVerticalMargin));
+					item->setPosition(Vec2(lastItem->getPositionX() + m_fLineSpacing, _innerContainer->getContentSize().height - m_fHorizontalMargin));
 					m_arHeadNode.pushBack(item); //行头
 				}
 			}
@@ -792,25 +800,25 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::RIGHT_TOP:
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, _innerContainer->getContentSize().height - m_fVerticalMargin));
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fTopMargin, _innerContainer->getContentSize().height - m_fHorizontalMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往下边增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() - Vec2(0, m_fWidgetSpacing));
+					item->setPositionY(lastItem->getPositionY() - m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
-					item->setPosition(lastItem->getPosition() - Vec2(0, fAverage));
+					float fAverage = (lastItem->getContentSize().height + item->getContentSize().height) / 2;
+					item->setPositionY(lastItem->getPositionY() - fAverage);
 				}
 
 				if (item->getPositionY() - m_fHorizontalMargin < 0 || isNewLineSymbol(lastItem)) //如果超出了一行的宽度或遇到换行符，就换行
 				{
-					item->setPosition(Vec2(lastItem->getPositionX() - m_fLineSpacing, _innerContainer->getContentSize().height - m_fVerticalMargin));
+					item->setPosition(Vec2(lastItem->getPositionX() - m_fLineSpacing, _innerContainer->getContentSize().height - m_fHorizontalMargin));
 					m_arHeadNode.pushBack(item); //行头
 				}
 			}
@@ -818,20 +826,20 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::LEFT_BOTTOM:
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(m_fHorizontalMargin, m_fVerticalMargin));
+				item->setPosition(Vec2(m_fTopMargin, m_fHorizontalMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
 				//把位置放到上一个控件往上增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() + Vec2(0, m_fWidgetSpacing));
+					item->setPositionY(lastItem->getPositionY() + m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
-					item->setPosition(lastItem->getPosition() + Vec2(0, fAverage));
+					float fAverage = (lastItem->getContentSize().height + item->getContentSize().height) / 2;
+					item->setPositionY(lastItem->getPositionY() + fAverage);
 				}
 
 				if (item->getPositionY() + m_fHorizontalMargin > _innerContainer->getContentSize().height || 
@@ -845,20 +853,20 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 		case ETableViewGravity::RIGHT_BOTTOM:
 			if (lastItem == nullptr)
 			{
-				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, m_fVerticalMargin));
+				item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fTopMargin, m_fHorizontalMargin));
 				m_arHeadNode.pushBack(item); //行头
 			}
 			else
 			{
-				//把位置放到上一个控件往左边增加一定距离的地方
-				if (m_eLayoutType == ABSOLUTE)
+				//把位置放到上一个控件往shang边增加一定距离的地方
+				if (m_eLayoutType == ELayoutType::ABSOLUTE)
 				{
-					item->setPosition(lastItem->getPosition() + Vec2(0, m_fWidgetSpacing));
+					item->setPositionY(lastItem->getPositionY() + m_fWidgetSpacing);
 				}
 				else
 				{
-					float fAverage = lastItem->getContentSize().height / 2 + item->getContentSize().height / 2;
-					item->setPosition(lastItem->getPosition() + Vec2(0, fAverage));
+					float fAverage = (lastItem->getContentSize().height + item->getContentSize().height) / 2;
+					item->setPositionY(lastItem->getPositionY() + fAverage);
 				}
 
 				if (item->getPositionY() + m_fHorizontalMargin > _innerContainer->getContentSize().height || 
@@ -898,7 +906,8 @@ void lly::TableView::copySpecialProperties( cocos2d::ui::Widget* widget )
 		setWidgetSpacing(tableview->m_fWidgetSpacing);
 		setLineSpacing(tableview->m_fLineSpacing);
 		setHorizontalMargin(tableview->m_fHorizontalMargin);
-		setVerticalMargin(tableview->m_fVerticalMargin);
+		setTopMargin(tableview->m_fTopMargin);
+		setBottomMargin(tableview->m_fBottomMargin);
 	}
 }
 

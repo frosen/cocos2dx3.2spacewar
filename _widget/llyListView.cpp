@@ -444,7 +444,7 @@ ListView* lly::ListView::create()
 void lly::ListView::pushBackDefaultItem()
 {
 	llyO_for_lly_listview::ListView::pushBackDefaultItem();
-	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::insertDefaultItem(ssize_t index)
@@ -478,13 +478,13 @@ void lly::ListView::insertDefaultItem(ssize_t index)
 
 	llyO_for_lly_listview::ListView::insertDefaultItem(index);
 
-	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::pushBackCustomItem(Widget* item)
 {
 	llyO_for_lly_listview::ListView::pushBackCustomItem(item);
-	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::insertCustomItem(Widget* item, ssize_t index)
@@ -516,7 +516,7 @@ void lly::ListView::insertCustomItem(Widget* item, ssize_t index)
 
 	llyO_for_lly_listview::ListView::insertCustomItem(item, index);
 
-	changeWidgetEvent(LISTVIEW_ADD_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
 void ListView::removeItem(ssize_t index)
@@ -546,21 +546,21 @@ void ListView::removeItem(ssize_t index)
 
 	llyO_for_lly_listview::ListView::removeItem(index);
 
-	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
 
 void ListView::removeLastItem()
 {
 	if (m_targetItem == getLastItem()) m_targetItem = nullptr; //取消目标控件
 	llyO_for_lly_listview::ListView::removeLastItem();
-	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
 
 void ListView::removeAllItems()
 {
 	if (m_targetItem) m_targetItem = nullptr; //取消目标控件
 	llyO_for_lly_listview::ListView::removeAllItems();
-	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::doLayout()
@@ -626,7 +626,7 @@ void lly::ListView::removeItem( Widget* item )
 	removeChild(item, true);
 	_refreshViewDirty = true;
 
-	changeWidgetEvent(LISTVIEW_REMOVE_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::moveItem( cocos2d::ui::Widget* item, WidgetMoveDirection dir, WidgetMoveType t /*= MOVE_BY*/, int num /*= 1*/ )
@@ -638,9 +638,9 @@ void lly::ListView::moveItem( cocos2d::ui::Widget* item, WidgetMoveDirection dir
 	}
 
 	int nAimIndex;
-	if (t == MOVE_BY)
+	if (t == WidgetMoveType::MOVE_BY)
 	{
-		if (dir == MOVE_FORWARD)
+		if (dir == WidgetMoveDirection::MOVE_FORWARD)
 			nAimIndex = _items.getIndex(item) + num;
 		else
 			nAimIndex = _items.getIndex(item) - num;
@@ -663,7 +663,7 @@ void lly::ListView::moveItem( cocos2d::ui::Widget* item, WidgetMoveDirection dir
 	_refreshViewDirty = true;
 	//======================================
 
-	changeWidgetEvent(LISTVIEW_MOVE_ITEM); //增删改控件时候的回调
+	changeWidgetEvent(changeItemType::MOVE_ITEM); //增删改控件时候的回调
 }
 
 //===============================保护
@@ -1006,7 +1006,7 @@ void lly::ListView::interceptTouchEvent(TouchEventType event, Widget *sender, To
 }
 
 //=============================================自添加
-void lly::ListView::changeWidgetEvent( ListViewchangeItem type )
+void lly::ListView::changeWidgetEvent( changeItemType type )
 {
 	if (addChangeItemEventFunc)
 		addChangeItemEventFunc(this, type);

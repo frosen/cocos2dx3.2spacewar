@@ -1,0 +1,11 @@
+diff a/_widget/llyGUIReader.cpp b/_widget/llyGUIReader.cpp	(rejected hunks)
+@@ -129,7 +129,8 @@
+ 		CCLOG("get point name %s, x %f, y %f", name, POSx, POSy);
+ 
+ 		//����map��
+-		GUIReader::getInstance()->recordPointInMap(name, Vec2(POSx, POSy));
++		Vec2 pointRecord(POSx, POSy);
++		GUIReader::getInstance()->recordPointInMap(name, pointRecord);
+ 
+ 		//���ؿ�ֵ����Ϊ����ؼ��Ͳ���ʾ�ڽ�������
+ 		return nullptr;

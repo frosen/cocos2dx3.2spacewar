@@ -233,26 +233,26 @@ class ListView : llyO_for_lly_listview::ListView
 	DECLARE_CLASS_GUI_INFO
 
 public:
-	typedef enum //控件的改变方式
+	enum class changeItemType//控件的改变方式
 	{
-		LISTVIEW_ADD_ITEM, //增加
-		LISTVIEW_REMOVE_ITEM, //删除
-		LISTVIEW_MOVE_ITEM, //移动
-	}ListViewchangeItem;
+		ADD_ITEM, //增加
+		REMOVE_ITEM, //删除
+		MOVE_ITEM, //移动
+	};
 
-	typedef enum //移动控件的方式
+	enum class WidgetMoveType//移动控件的方式
 	{
 		MOVE_BY, //移动某个距离
 		MOVE_TO, //移动到哪里
-	}WidgetMoveType;
+	};
 
-	typedef enum //移动控件的方式
+	enum class WidgetMoveDirection//移动控件的方式
 	{
 		MOVE_FORWARD, //向前移动
 		MOVE_BACKWARD, //向后移动
-	}WidgetMoveDirection;
+	};
 
-	typedef std::function<void(Ref*, ListViewchangeItem t)> changeItemCallback;
+	typedef std::function<void(cocos2d::Ref*, changeItemType t)> changeItemCallback;
 
 	ListView();
 	virtual ~ListView();
@@ -294,7 +294,11 @@ public:
 	void setMarginToTop(float fMargin) { m_fMarginToTop = fMargin; }
 
 	//移动控件位置，参数分别为要移动的控件，移动方式（是移动多少个，还是移动到某位置）移动单位（位置），如果超过最大限度则移动到最大位置
-	void moveItem(cocos2d::ui::Widget* item, WidgetMoveDirection dir, WidgetMoveType t = MOVE_BY, int num = 1);
+	void moveItem(
+		cocos2d::ui::Widget* item, 
+		WidgetMoveDirection dir, 
+		WidgetMoveType t = WidgetMoveType::MOVE_BY, 
+		int num = 1);
 
 	//获取当前是否在变更
 	bool isRefreshing() { return _refreshViewDirty; }	
@@ -317,12 +321,12 @@ protected:
 	float getDistance(cocos2d::ui::Widget* item) 
 	{ 
 		return _itemsMargin + (
-			_direction == llyO::ScrollView::Direction::VERTICAL ? item->getContentSize().height : 
-			_direction == llyO::ScrollView::Direction::VERTICAL ? item->getContentSize().width : 0); 
+			_direction == llyO_for_lly_scrollview::ScrollView::Direction::VERTICAL ? item->getContentSize().height : 
+			_direction == llyO_for_lly_scrollview::ScrollView::Direction::VERTICAL ? item->getContentSize().width : 0); 
 	}
 
 	//增删移动子控件时候调用 默认空
-	void changeWidgetEvent(ListViewchangeItem type);
+	void changeWidgetEvent(changeItemType type);
 
 	virtual void visit(cocos2d::Renderer *renderer, const cocos2d::Mat4& parentTransform, bool parentTransformUpdated);
 

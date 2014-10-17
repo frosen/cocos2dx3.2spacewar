@@ -234,25 +234,25 @@ class TableView : public llyO_for_lly_tableview::ListView
 public:
 	DECLARE_CLASS_GUI_INFO
 
-	typedef enum  //布局方式，绝对布局比较横平竖直，相对布局用于文字等
+	enum class ELayoutType //布局方式，绝对布局比较横平竖直，相对布局用于文字等
 	{
 		ABSOLUTE,
 		RELATIVE,
-	}ELayoutType;
+	};
 
-	typedef enum  //停靠方向
+	enum class ETableViewGravity //停靠方向
 	{
 		LEFT_TOP,
 		RIGHT_TOP,
 		LEFT_BOTTOM,
 		RIGHT_BOTTOM,
-	}ETableViewGravity;
+	};
 
-	typedef enum //书写方向
+	enum class EArrangementDirection//书写方向
 	{
 		HORIZONTAL, //先横着排，到头换行
 		VERTICAL,	//先竖着排，到头换列
-	}EArrangementDirection;
+	};
 
 	TableView();
 	virtual ~TableView();
@@ -281,8 +281,11 @@ public:
 	//设置到左右边儿的距离（默认为30）
 	void setHorizontalMargin(float fMargin);
 
-	//设置到上或下边儿的距离（默认为30）
-	void setVerticalMargin(float fMargin);
+	//设置到上边儿的距离（默认为40）
+	void setTopMargin(float fMargin);
+
+	//设置到上边儿的距离（默认为20）
+	void setBottomMargin(float fMargin);
 
 	//此控件是否是一个换行符号
 	bool isNewLineSymbol(cocos2d::Node* item); 
@@ -318,7 +321,8 @@ protected:
 	float m_fLineSpacing; //默认20
 
 	float m_fHorizontalMargin; //默认30
-	float m_fVerticalMargin; //默认30
+	float m_fTopMargin; //默认40
+	float m_fBottomMargin; //默认20
 
 	cocos2d::Vec2 m_posMaxMove; //最大移动距离，大于这个距离不响应触控
 

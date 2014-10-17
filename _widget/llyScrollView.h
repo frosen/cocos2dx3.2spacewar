@@ -1,6 +1,7 @@
 /*
 名称：llyScrollView.h
 内容：新的滑动列表控件，
+			原始函数修改一些函数成为虚函数：setInnerContainerSize, jumpToDestination
 			特性：
             给内层范围超出外层时增加了回调函数，可用于此时显示滑动条，
 			给拖动内层时增加了回调函数，可用于更改滑动条
@@ -18,7 +19,7 @@
 
 #include "ui/UILayout.h"
 
-namespace llyO{
+namespace llyO_for_lly_scrollview{
 
 class EventFocusListener;
 
@@ -424,25 +425,25 @@ protected:
     ccScrollViewCallback _eventCallback;
 };
 
-} //llyO
+} //llyO_for_lly_scrollview
 
 //======================================
 namespace lly {
 
 class Slider;
 
-typedef enum //添加，用于变更内层大小时的回调
-{
-	NO_CHANGE,
-	INNER_TURN_LONGER_THAN_OUTER,
-	INNER_TURN_NOT_LONGER_THAN_OUTER,
-}ChangeInnerSizeType;
-
-class ScrollView : public llyO::ScrollView
+class ScrollView : public llyO_for_lly_scrollview::ScrollView
 {
 	DECLARE_CLASS_GUI_INFO
 
 public:
+	enum class ChangeInnerSizeType//添加，用于变更内层大小时的回调
+	{
+		NO_CHANGE,
+		INNER_TURN_LONGER_THAN_OUTER,
+		INNER_TURN_NOT_LONGER_THAN_OUTER,
+	};
+
 	typedef std::function<void(cocos2d::Ref* ob, int x, int y)> ScrollViewCallback; 
 	typedef std::function<void(cocos2d::Ref* ob, ChangeInnerSizeType wT, ChangeInnerSizeType hT, int w, int h)> ChangeInnerCallback; 
 
@@ -451,7 +452,7 @@ public:
 
     static ScrollView* create();
 
-	virtual void setInnerContainerSize(const cocos2d::Size &size);
+	virtual void setInnerContainerSize(const cocos2d::Size &size) override;
 
 	//===========================================
 	//滚动事件，控制滑动条，参数为控件对象，到达X轴%，到达y轴%，-1为内层不大于外层
@@ -522,7 +523,6 @@ protected:
 	bool _isInnerCanMove; //是否可以拖拽移动子层，默认为true
 
 	cocos2d::Node* m_targetItem;
-
 };
 
 }

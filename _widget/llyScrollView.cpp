@@ -1,7 +1,7 @@
 #include "llyScrollView.h"
 #include "llySlider.h"
 
-namespace llyO{
+namespace llyO_for_lly_scrollview{
 
 USING_NS_CC;
 using namespace ui;
@@ -1767,7 +1767,7 @@ using namespace lly;
 
 IMPLEMENT_CLASS_GUI_INFO(lly::ScrollView)
 
-lly::ScrollView::ScrollView() : llyO::ScrollView(),
+lly::ScrollView::ScrollView() : llyO_for_lly_scrollview::ScrollView(),
 	//===============================
 	m_innerContainerPositionXPercent(-1),
 	m_innerContainerPositionYPercent(-1),
@@ -1798,7 +1798,7 @@ lly::ScrollView* lly::ScrollView::create()
 
 void lly::ScrollView::setInnerContainerSize( const cocos2d::Size &size )
 {
-	llyO::ScrollView::setInnerContainerSize(size);
+	llyO_for_lly_scrollview::ScrollView::setInnerContainerSize(size);
 	changeInnerContainerSizeEvent(); //添加
 }
 
@@ -1809,13 +1809,13 @@ std::string lly::ScrollView::getDescription() const
 
 void lly::ScrollView::onSizeChanged()
 {
-	llyO::ScrollView::onSizeChanged();
+	llyO_for_lly_scrollview::ScrollView::onSizeChanged();
 	changeInnerContainerSizeEvent(); //添加
 }
 
 void lly::ScrollView::jumpToDestination(const cocos2d::Vec2& des)
 {
-	llyO::ScrollView::jumpToDestination(des);
+	llyO_for_lly_scrollview::ScrollView::jumpToDestination(des);
 
 	//添加，记录百分比和进行回调			
 	doAfterChangeInnerContainerPosition(false);
@@ -1823,7 +1823,7 @@ void lly::ScrollView::jumpToDestination(const cocos2d::Vec2& des)
 
 bool lly::ScrollView::scrollChildren(float touchOffsetX, float touchOffsetY)
 {
-	bool b = llyO::ScrollView::scrollChildren(touchOffsetX, touchOffsetY);
+	bool b = llyO_for_lly_scrollview::ScrollView::scrollChildren(touchOffsetX, touchOffsetY);
 
 	//添加，记录百分比和进行回调			
 	doAfterChangeInnerContainerPosition();
@@ -1834,14 +1834,14 @@ void lly::ScrollView::endRecordSlidAction()
 {
 	if (!_isInnerCanMove) return; //添加，设置了不可移动子层
 
-	llyO::ScrollView::endRecordSlidAction();
+	llyO_for_lly_scrollview::ScrollView::endRecordSlidAction();
 }
 
 void lly::ScrollView::handleMoveLogic(cocos2d::Touch *touch)
 {
 	if (!_isInnerCanMove) return; //添加 设置了不能移动子层
 
-	llyO::ScrollView::handleMoveLogic(touch);
+	llyO_for_lly_scrollview::ScrollView::handleMoveLogic(touch);
 }
 
 //=======================================================
@@ -1871,14 +1871,14 @@ void lly::ScrollView::setLinkedSlider( lly::Slider* heightSlider, lly::Slider* w
 				heightSlider->setVisible(false);
 			}
 
-			this->addChangeInnerEventListener([=](Ref* ob, lly::ChangeInnerSizeType wT, lly::ChangeInnerSizeType hT, int w, int h)
+			this->addChangeInnerEventListener([=](Ref* ob, ChangeInnerSizeType wT, ChangeInnerSizeType hT, int w, int h)
 			{
 				switch (hT)
 				{
-				case INNER_TURN_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_LONGER_THAN_OUTER:
 					heightSlider->setVisible(true);
 					break;
-				case INNER_TURN_NOT_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_NOT_LONGER_THAN_OUTER:
 					heightSlider->setVisible(false);
 					break;
 				default:
@@ -1913,14 +1913,14 @@ void lly::ScrollView::setLinkedSlider( lly::Slider* heightSlider, lly::Slider* w
 				widthSlider->setVisible(false);
 			}
 
-			this->addChangeInnerEventListener([=](Ref* ob, lly::ChangeInnerSizeType wT, lly::ChangeInnerSizeType hT, int w, int h)
+			this->addChangeInnerEventListener([=](Ref* ob, ChangeInnerSizeType wT, ChangeInnerSizeType hT, int w, int h)
 			{
 				switch (wT)
 				{
-				case INNER_TURN_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_LONGER_THAN_OUTER:
 					widthSlider->setVisible(true);
 					break;
-				case INNER_TURN_NOT_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_NOT_LONGER_THAN_OUTER:
 					widthSlider->setVisible(false);
 					break;
 				default:
@@ -1971,14 +1971,14 @@ void lly::ScrollView::setLinkedSlider( lly::Slider* heightSlider, lly::Slider* w
 				heightSlider->setVisible(false);
 			}
 
-			this->addChangeInnerEventListener([=](Ref* ob, lly::ChangeInnerSizeType wT, lly::ChangeInnerSizeType hT, int w, int h)
+			this->addChangeInnerEventListener([=](Ref* ob, ChangeInnerSizeType wT, ChangeInnerSizeType hT, int w, int h)
 			{
 				switch (wT)
 				{
-				case INNER_TURN_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_LONGER_THAN_OUTER:
 					widthSlider->setVisible(true);
 					break;
-				case INNER_TURN_NOT_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_NOT_LONGER_THAN_OUTER:
 					widthSlider->setVisible(false);
 					break;
 				default:
@@ -1988,10 +1988,10 @@ void lly::ScrollView::setLinkedSlider( lly::Slider* heightSlider, lly::Slider* w
 
 				switch (hT)
 				{
-				case INNER_TURN_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_LONGER_THAN_OUTER:
 					heightSlider->setVisible(true);
 					break;
-				case INNER_TURN_NOT_LONGER_THAN_OUTER:
+				case ChangeInnerSizeType::INNER_TURN_NOT_LONGER_THAN_OUTER:
 					heightSlider->setVisible(false);
 					break;
 				default:
@@ -2019,21 +2019,21 @@ void lly::ScrollView::changeInnerContainerSizeEvent()
 {
 	int widthRate = (int)(_contentSize.width * 100 / _innerContainer->getContentSize().width );
 	int heightRate = (int)(_contentSize.height * 100 / _innerContainer->getContentSize().height);
-	ChangeInnerSizeType _widthChangeType = NO_CHANGE;
-	ChangeInnerSizeType _heightChangeType = NO_CHANGE;
+	ChangeInnerSizeType _widthChangeType = ChangeInnerSizeType::NO_CHANGE;
+	ChangeInnerSizeType _heightChangeType = ChangeInnerSizeType::NO_CHANGE;
 
 	//原本没有外层宽，现在突然宽了
 	if (!isInnerWidthThanOuter && _innerContainer->getContentSize().width > _contentSize.width)
 	{
 		isInnerWidthThanOuter = true;	
-		_widthChangeType = INNER_TURN_LONGER_THAN_OUTER;
+		_widthChangeType = ChangeInnerSizeType::INNER_TURN_LONGER_THAN_OUTER;
 	}
 
 	//原本比外层宽，现在突然窄了
 	if (isInnerWidthThanOuter && _innerContainer->getContentSize().width <= _contentSize.width)
 	{
 		isInnerWidthThanOuter = false;
-		_widthChangeType = INNER_TURN_NOT_LONGER_THAN_OUTER;
+		_widthChangeType = ChangeInnerSizeType::INNER_TURN_NOT_LONGER_THAN_OUTER;
 
 		//重新设定比例
 		m_innerContainerPositionXPercent = -1;		
@@ -2043,14 +2043,14 @@ void lly::ScrollView::changeInnerContainerSizeEvent()
 	if (!isInnerHeightThanOuter && _innerContainer->getContentSize().height > _contentSize.height)
 	{
 		isInnerHeightThanOuter = true;
-		_heightChangeType = INNER_TURN_LONGER_THAN_OUTER;
+		_heightChangeType = ChangeInnerSizeType::INNER_TURN_LONGER_THAN_OUTER;
 	}
 
 	//原本比外层高，现在突然低了
 	if (isInnerHeightThanOuter && _innerContainer->getContentSize().height <= _contentSize.height)
 	{
 		isInnerHeightThanOuter = false;
-		_heightChangeType = INNER_TURN_NOT_LONGER_THAN_OUTER;
+		_heightChangeType = ChangeInnerSizeType::INNER_TURN_NOT_LONGER_THAN_OUTER;
 
 		//重新设定比例
 		m_innerContainerPositionYPercent = -1;
@@ -2073,7 +2073,7 @@ void ScrollView::copySpecialProperties(Widget *widget)
 	lly::ScrollView* scrollView = dynamic_cast<lly::ScrollView*>(widget);
 	if (scrollView)
 	{
-		llyO::ScrollView::copySpecialProperties(widget);
+		llyO_for_lly_scrollview::ScrollView::copySpecialProperties(widget);
 		m_addScrollViewEventFunc = scrollView->m_addScrollViewEventFunc;
 		m_addChangeInnerEventFunc = scrollView->m_addChangeInnerEventFunc;
 		_isInnerCanMove = scrollView->_isInnerCanMove;
