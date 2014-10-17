@@ -129,7 +129,8 @@ cocos2d::ui::Widget* lly::WidgetPropertiesReader0300::widgetFromJsonDictionary( 
 		CCLOG("get point name %s, x %f, y %f", name, POSx, POSy);
 
 		//放入map中
-		GUIReader::getInstance()->recordPointInMap(name, Vec2(POSx, POSy));
+		Vec2 pointRecord(POSx, POSy);
+		GUIReader::getInstance()->recordPointInMap(name, pointRecord);
 
 		//返回空值，因为这个控件就不显示于界面上了
 		return nullptr;
