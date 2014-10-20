@@ -39,7 +39,6 @@ protected:
 
 	float m_fDelta; //每次刷新时的变化量
 	int nPlusOrMinus; //int 1为正数，-1为负数
-	float fTemp;
 
 private:
 	CC_DISALLOW_COPY_AND_ASSIGN(ModifyVar);
