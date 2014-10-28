@@ -22,6 +22,8 @@ function lly.traceback(msg)
 	return msg
 end
 
+
+
 ---
 --自定义的log类，便于修改和调试
 
@@ -58,6 +60,8 @@ function lly.logTraceback()
 	end
 	--]]
 end
+
+
 
 ---
 --禁止产生全局变量的函数，定义在主函数中，此后将不可新建全局变量，避免因写错名称但无法检测而造成的麻烦
@@ -101,6 +105,8 @@ function lly.finalizeCurrentEnvironment()
 	setfenv(2, newgt)
 end
 
+
+
 ---
 --使类的实例最终化，也就是这之后不能再添加新的属性，避免因写错名称但无法检测而造成的麻烦
 --适用于
@@ -117,7 +123,7 @@ function lly.finalizeInstance(ins)
 	if mt ~= nil then 
 		--有元表
 		local strClassName = ins.__cname --对象的类名
-			
+
 		if mt_table[strClassName] == nil then
 			mt_table[strClassName] = {}
 			mt_table[strClassName].__index = mt.__index
@@ -125,19 +131,40 @@ function lly.finalizeInstance(ins)
 		end
 
 		mt.__index = function (t, k)
-			local x = mt_table[strClassName].__index(t, k)
-			if x == nil then
-				error("(>_<)/no this attribute " .. k, 2)
+			local __idxTmp = mt_table[strClassName].__index
+
+			local result = nil
+			if type(__idxTmp) == "function" then
+				result = __idxTmp(t, k)
+			else
+				result = __idxTmp[k]
 			end
-			return x
+
+			if result == nil then
+				error("(>_<)/no this attribute : " .. k, 2)
+			end
+			return result
 		end
 
 		mt.__newindex = function (t, k, v)
-			local x = mt_table[strClassName].__index(t, k)
-			if x == nil then
-				error("(>_<)/no this attribute " .. k, 2)
+			local __idxTmp = mt_table[strClassName].__index
+
+			local result = nil
+			if type(__idxTmp) == "function" then
+				result = __idxTmp(t, k)
 			else
-				return mt_table[strClassName].__newindex(t, k, v)
+				result = __idxTmp[k]
+			end
+			
+			if result == nil then
+				error("(>_<)/no this attribute : " .. k, 2)
+			else
+				local __nwidxTmp = mt_table[strClassName].__newindex
+				if type(__nwidxTmp) == "function" then
+					__nwidxTmp(t, k, v)
+				else
+					__nwidxTmp[k] = v
+				end
 			end
 		end	
 	else
@@ -155,6 +182,8 @@ function lly.finalizeInstance(ins)
 	end
 	--]]
 end
+
+
 
 ---
 --创建类的函数，基本等于cocos3.2的extern。lua中的class函数，
@@ -287,7 +316,7 @@ function lly.struct(create_table_func)
 	return stru
 end
 
-
+--
 
 
 
