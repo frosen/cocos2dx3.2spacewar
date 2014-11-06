@@ -68,41 +68,45 @@ end
 
 --禁止所有的全局变量
 function lly.finalizeGlobalEnvironment()
+	---[[
 	local mt = {}	
 	
 	mt.__index = function (t, k)
-		error("(>_<)/undeclared var : " .. k, 2)
+		error("(>_<)/undeclared global var : " .. k, 2)
 	end
 
 	mt.__newindex = function (t, k, v)
-		error("(>_<)/undeclared var : " .. k, 2)
+		error("(>_<)/undeclared global var : " .. k, 2)
 	end
 
 	setmetatable(_G, mt)
+	--]]
 end
 
 --只禁止当前文件的全局变量，会改变当前文件的环境
 function lly.finalizeCurrentEnvironment()
+	---[[
 	local mt = {}
 	
 	mt.__index = function (t, k)
 		local globalValue = _G[k]
 		
 		if globalValue == nil then
-			error("(>_<)/undeclared var : " .. k, 2)
+			error("(>_<)/undeclared global var : " .. k, 2)
 		else
 			return globalValue
 		end
 	end
 
 	mt.__newindex = function (t, k, v)
-		error("(>_<)/undeclared var : " .. k, 2)
+		error("(>_<)/undeclared global var : " .. k, 2)
 	end
 	
 	local newgt = {}
 	setmetatable(newgt,mt)
 	
 	setfenv(2, newgt)
+	--]]
 end
 
 
@@ -114,8 +118,11 @@ end
 --	自定义的lua class
 --	自定义的结构
 --最终release时，可把此函数内容注释掉
-local mt_table = {} --保存原有的mt的index函数
 
+--【私有】保存原有的mt的index函数
+local mt_table = {}
+
+--最终化
 function lly.finalizeInstance(ins)
 	---[[
 	local mt = getmetatable(ins)
@@ -195,8 +202,8 @@ end
 --	init 用于初始化，调用create时调用
 --还有一个create作为模板，生成对象用，create可以自行修改或者禁用
 
---克隆，完全复制于extern
-function lly.clone(object)
+--【私有函数】克隆，完全复制于extern
+local function clone(object)
 	local lookup_table = {}
 	local function _copy(object)
 		if type(object) ~= "table" then
@@ -276,7 +283,7 @@ function lly.class(classname, super)
 	--实现ctor中的函数
 	function cls:implementFunction() error("need implement func", 2) end
 
-	--初始化
+	--初始化 --返回是否初始化成功
 	function cls:init(...) error("need init", 2) end
 
 	--工厂函数，创建对象
@@ -288,7 +295,7 @@ function lly.class(classname, super)
 		if b then
 			return pRet
 		else
-			lly.log("(>_<)/init return false")
+			lly.log("(O_O)/init false")
 			pRet = nil
 			return nil
 		end
@@ -300,14 +307,25 @@ end
 --创建一个结构体，基本为 一个简化的创建类的方法
 --在函数的ctor方法要返回 一个结构体
 --创建好以后，用create生成的对象，不能再往里面添加内容
-function lly.struct(create_table_func)	
+
+--【私有函数】给每个类提供唯一标识
+local structID = 0 
+local function getUniqueStructID()
+	structID = structID + 1
+	return structID
+end
+
+function lly.struct(create_table_func)
 	local stru = {}
-	stru.table_ctor = create_table_func	
+	stru.table_ctor = create_table_func
+	stru.__ID = getUniqueStructID()
 
 	--工厂函数，创建对象
 	function stru:create()--返回struct的对象
 		local pRet = self.table_ctor()
 		if type(pRet) == "table" then
+			pRet.__ctype = 3 --区别于class
+			pRet.__structID = self.__ID
 			lly.finalizeInstance(pRet)--最终化对象
 			return pRet
 		end
@@ -316,7 +334,45 @@ function lly.struct(create_table_func)
 	return stru
 end
 
---
+--确保对象属于某个类型，不属于则报错
+--基础类型和原始c类型的typename为文字
+--自定义类型和自定义结构体的typename为table
+function lly.ensure(value, typename)
+	---[[
+	if type(value) == nil then return end --值为空则不进行检查
+
+	if type(typename) == "string" then 
+		if type(value) ~= typename and tolua.type(value) ~= typename then
+			error("(>_<)/ensure wrong: value must be a " .. typename, 2)
+		end
+
+	elseif type(typename) == "table" then
+		if value.__ctype == 1 or value.__ctype == 2 then --ctype == 1 or 2则为class，3是struct
+			if value.class == nil then --instance是对象
+				error("(>_<)/ensure wrong: value must be a instance", 2)
+			end
+
+			if typename.__ctype == nil or typename.class ~= nil then --class是类
+				error("(>_<)/ensure wrong: value must be a class", 2)
+			end
+			
+			if value.__cname ~= typename.__cname or
+				value.__ctype ~= typename.__ctype then
+				error("(>_<)/ensure wrong: value must belong to this class", 2)
+			end
+
+		elseif value.__ctype == 3 then
+			if value.__structID ~= typename.__ID then
+				error("(>_<)/ensure wrong: value must belong to this struct", 2)
+			end
+		else
+			error("(>_<)/ensure wrong: value is illegal", 2)
+		end
+	else
+		error("(>_<)/ensure wrong: typename must be a string/table", 2)
+	end
+	--]]
+end
 
 
 

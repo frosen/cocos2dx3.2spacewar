@@ -39,7 +39,7 @@ class Socket
 {
 public:
 	Socket();
-	~Socket();
+	virtual ~Socket();
 
 	//创建socket type：字节流还是数据报
 	virtual bool create(int type, int protocol = 0);
