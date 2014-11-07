@@ -1,6 +1,11 @@
 #include "llyHttpSocket.h"
+#include "llyHttpErrorCode.h"
+
 #include "json\stringbuffer.h"
 #include "json\writer.h"
+
+#include <regex>
+
 using namespace lly;
 
 //统一两个系统的方法
@@ -16,33 +21,6 @@ inline void sleep(int n)
 #else
 	::usleep(n*1000);
 #endif
-}
-
-const char* lly::HttpSocket::getErrorMsg( Error e )
-{
-	switch (e)
-	{
-	case lly::HttpSocket::Error::OK:
-		return "OK";
-	case lly::HttpSocket::Error::EMPTY:
-		return "EMPTY";
-	case lly::HttpSocket::Error::CHANGE_SERVER:
-		return "CHANGE_SERVER";
-	case lly::HttpSocket::Error::FILE_EXIST:
-		return "FILE_EXIST";
-	case lly::HttpSocket::Error::UNKNOWN:
-		return "UNKNOWN";
-	case lly::HttpSocket::Error::CONNECT_FAIL:
-		return "CONNECT_FAIL";
-	case lly::HttpSocket::Error::TIMEOUT:
-		return "TIMEOUT";
-	case lly::HttpSocket::Error::SEND_FAIL:
-		return "SEND_FAIL";
-	case lly::HttpSocket::Error::RECV_FAIL:
-		return "RECV_FAIL";
-	default:
-		return "unknown error";
-	}
 }
 
 lly::HttpSocket::HttpSocket() :
@@ -62,7 +40,7 @@ lly::HttpSocket::~HttpSocket()
 
 bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
 {
-	m_ErrorCode = HttpSocket::Error::UNKNOWN;
+	m_ErrorCode = HTTP_ERROR_UNKNOWN;
 
 	if (strcmp(m_strIP.c_str(), pReq->m_strServerIP.c_str()) != 0 || 
 		m_nPort != pReq->m_nServerPort || 
@@ -76,7 +54,7 @@ bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
 		if (!create(SOCK_STREAM) || !connect(m_strIP.c_str(), m_nPort))
 		{
 			//CCLog("ip %s, port %d, is connect no", m_strServer.c_str(), (int)m_nPort);
-			m_ErrorCode = HttpSocket::Error::CONNECT_FAIL;
+			m_ErrorCode = HTTP_ERROR_CONNECT_FAIL;
 			return false;
 		}
 
@@ -94,7 +72,7 @@ bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
 	}
 	else
 	{
-		m_ErrorCode = HttpSocket::Error::SEND_FAIL;
+		m_ErrorCode = HTTP_ERROR_SEND_FAIL;
 		close();
 		return false;
 	}
@@ -102,7 +80,7 @@ bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
 
 bool lly::HttpSocket::sendResponse( std::shared_ptr<HttpResponse> pAck )
 {
-	m_ErrorCode = HttpSocket::Error::UNKNOWN;
+	m_ErrorCode = HTTP_ERROR_UNKNOWN;
 
 	std::string strHttpSend; //用http发送的数据流
 	if (!pAck->geneData(strHttpSend)) return false;
@@ -114,7 +92,7 @@ bool lly::HttpSocket::sendResponse( std::shared_ptr<HttpResponse> pAck )
 	}
 	else
 	{
-		m_ErrorCode = HttpSocket::Error::SEND_FAIL;
+		m_ErrorCode = HTTP_ERROR_SEND_FAIL;
 		close();
 		return false;
 	}	
@@ -123,7 +101,7 @@ bool lly::HttpSocket::sendResponse( std::shared_ptr<HttpResponse> pAck )
 std::shared_ptr<HttpRequest> lly::HttpSocket::recvRequest()
 {
 	int lenBuf;
-	char* pBuf = recvHttpMsg(lenBuf);
+	char* pBuf = recvHttpMsg_needfree(lenBuf);
 	if (pBuf == nullptr) return nullptr;
 
 	auto pReq = new HttpRequest();
@@ -132,9 +110,14 @@ std::shared_ptr<HttpRequest> lly::HttpSocket::recvRequest()
 		free(pBuf);
 		return nullptr;
 	}
-
+	
 	pReq->analyzeData(pBuf, lenBuf);
 	free(pBuf);
+
+	if (m_ErrorCode == HTTP_ERROR_OK) //自身无错误就读入request的错误
+	{
+		m_ErrorCode = pReq->getErrorCode();
+	}
 
 	return std::shared_ptr<HttpRequest>(pReq);
 }
@@ -143,7 +126,7 @@ std::shared_ptr<HttpResponse> lly::HttpSocket::recvResponse()
 {
 	int lenBuf;
 	
-	char* pBuf = recvHttpMsg(lenBuf);
+	char* pBuf = recvHttpMsg_needfree(lenBuf);
 	
 	if (pBuf == nullptr) return nullptr;
 
@@ -157,6 +140,11 @@ std::shared_ptr<HttpResponse> lly::HttpSocket::recvResponse()
 	pAck->analyzeData(pBuf, lenBuf);
 	free(pBuf);
 
+	if (m_ErrorCode == HTTP_ERROR_OK) //自身无错误就读入Response的错误
+	{
+		m_ErrorCode = pAck->getErrorCode();
+	}
+
 	return std::shared_ptr<HttpResponse>(pAck);
 }
 
@@ -166,16 +154,16 @@ int lly::HttpSocket::close()
 	return lly::Socket::close();
 }
 
-char* lly::HttpSocket::recvHttpMsg( int &out_lenMsg )
+char* lly::HttpSocket::recvHttpMsg_needfree( int &out_lenMsg ) 
 {
-	m_ErrorCode = Error::UNKNOWN;
+	m_ErrorCode = HTTP_ERROR_UNKNOWN;
 
 	out_lenMsg = 0;
 	int lenMsgRecv = 0;
 	int lenMsgAlloc = 0;
 	char* pMsg = nullptr;
 
-	if (m_lenPreReadBuf)
+	if (m_lenPreReadBuf) //还有没读完的消息，则首先读取
 	{
 		lenMsgRecv = m_lenPreReadBuf;
 		lenMsgAlloc = m_lenPreReadBuf;
@@ -191,23 +179,40 @@ char* lly::HttpSocket::recvHttpMsg( int &out_lenMsg )
 	{
 		if (out_lenMsg == 0 && lenMsgRecv)
 		{
-			pMsg[lenMsgRecv] = 0;
+			pMsg[lenMsgRecv] = '\0';
 
-			char* s = strstr(pMsg, "\r\n\r\n");
-			if (s!=NULL)
+			int lenChar1 = 4; //\r\n\r\n
+			int lenChar2 = 15; //Content-Length:
+
+			char* sPos = strstr(pMsg, "\r\n\r\n"); //获得第二个字符串在第一个中的位置指针
+			if (sPos == nullptr)
 			{
-				char *ss=strstr(pMsg,"Content-Length:");
-				if (ss!=NULL)
+				sPos = strstr(pMsg, "\n\n");
+				lenChar1 = 2; //\n\n
+			}
+
+			if (sPos != nullptr) //说明有一般内容
+			{
+				char* sPos2 = strstr(pMsg, "Content-Length:");
+				if (sPos2 != nullptr)
 				{
-					lenMsg=((s+4)-pMsg)+atoi(ss+15);
-					if (lenMsg>MAXLEN_HTTPDATA) break;
+					//请求头部的长度，利用指针想减得出
+					int lenHeadContents = sPos + lenChar1 - pMsg; //数字为
+
+					//请求内容的长度，用头部记录的数据得出
+					int lenBodyContents;
+					sscanf_s(sPos2 + lenChar2, "%d", &lenBodyContents);
+
+					out_lenMsg = lenHeadContents + lenBodyContents;
+
+					if (out_lenMsg > (int)Data::MAXLEN) break;
 				}
 			}
 		}
 
-		if (out_lenMsg && lenMsgRecv >= out_lenMsg)
+		if (0 < out_lenMsg && out_lenMsg <= lenMsgRecv) //?
 		{
-			m_nErrorCode=ERROR_HTTP_OK;
+			m_ErrorCode = HTTP_ERROR_OK;
 			break;
 		}
 
@@ -215,14 +220,14 @@ char* lly::HttpSocket::recvHttpMsg( int &out_lenMsg )
 
 		if (len < 0) //错误
 		{
-			m_ErrorCode = Error::RECV_FAIL;
+			m_ErrorCode = HTTP_ERROR_RECV_FAIL;
 			break;
 		}
 		else if (len == 0) //未收到信息
 		{
 			if (time(nullptr) - timeStart > m_nTimeout)
 			{
-				m_ErrorCode = Error::TIMEOUT;
+				m_ErrorCode = HTTP_ERROR_TIMEOUT;
 				break;
 			}
 			else //没有超时，重新读取
@@ -232,67 +237,74 @@ char* lly::HttpSocket::recvHttpMsg( int &out_lenMsg )
 			}		
 		}
 
-		//末尾添加一个0
-		int lenNeed = lenMsgRecv + len + 1;
+		//收到了信息	
+		int lenNeed = lenMsgRecv + len + 1; //末尾添加一个0
 		if (lenNeed > lenMsgAlloc)
 		{
 			char* pTmp = (char*)realloc(pMsg, lenNeed);
 			if (pTmp == nullptr)
 			{
-				m_ErrorCode = Error::OUT_OF_MEMORY;
+				m_ErrorCode = HTTP_ERROR_OUT_OF_MEMORY;
 				break;
 			}
-
-			pMsg = pTmp;
-			lenMsgAlloc = lenNeed;
+			else
+			{
+				pMsg = pTmp;
+				lenMsgAlloc = lenNeed;
+			}		
 		}
+
 		int nRet = recv(pMsg + lenMsgRecv, len);
 		if (nRet < 0)
 		{
-			m_ErrorCode = Error::RECV_FAIL;
+			m_ErrorCode = HTTP_ERROR_RECV_FAIL;
 			break;
 		}
 
 		lenMsgRecv += nRet;
 
-		if (lenMsgRecv > (int)Data::MAXLEN) break;
+		if (lenMsgRecv > (int)Data::MAXLEN) break; //信息过长
+
+		//继续循环
 	}
 
-	if (m_nErrorCode==ERROR_HTTP_OK && lenMsg<lenMsgRecv)
+	if (m_ErrorCode != HTTP_ERROR_OK) //失败
 	{
-		int lenMore=lenMsgRecv-lenMsg;
-		char *pTmp=(char *)realloc(m_pPreReadBuf,lenMore+1);
-		if (pTmp==NULL)
+		close();
+		out_lenMsg = 0;
+		free(pMsg);
+		return nullptr;
+	}
+	else if (out_lenMsg < lenMsgRecv) //成功，但是接收到的消息比一个http消息包多
+	{
+		int lenMore = lenMsgRecv - out_lenMsg;
+		char* pTmp = (char*)realloc(m_pPreReadBuf, lenMore + 1);
+		if (pTmp == nullptr)
 		{
-			m_nErrorCode=ERROR_GENERAL_OUTOFMEMORY;
+			m_ErrorCode = HTTP_ERROR_OUT_OF_MEMORY;
 		}
 		else
 		{
-			m_pPreReadBuf=pTmp;
-			m_lenPreReadBuf=lenMore;
-			memmove(m_pPreReadBuf,pMsg+lenMsg,lenMore);
+			m_pPreReadBuf = pTmp;
+			m_lenPreReadBuf = lenMore;
+			memmove(m_pPreReadBuf, pMsg + out_lenMsg, lenMore);
 		}
 	}
-	if (m_nErrorCode!=ERROR_HTTP_OK)
-	{
-		Close();
-		lenMsg=0;
-		free(pMsg);
-		return NULL;
-	}
-	pMsg[lenMsg]=0;
+	
+	pMsg[out_lenMsg] = '\0';
 	return pMsg;
 }
 
 //==========================================
 
 lly::HttpDataBase::HttpDataBase() :
+	m_strToken(""),
 	m_pJson(nullptr),
 	m_lenExtraData(0),
 	m_lenExtraDataAlloc(0),
 	m_pExtraData(nullptr),
 	m_bKeepAlive(false),
-	m_ErrorCode(HttpSocket::Error::OK),
+	m_ErrorCode(HTTP_ERROR_OK),
 	m_pUserData(nullptr)
 {
 
@@ -379,9 +391,9 @@ lly::HttpRequest::~HttpRequest()
 	clearParam();
 }
 
-std::unique_ptr<HttpRequest> lly::HttpRequest::createUniquePointer()
+std::shared_ptr<HttpRequest> lly::HttpRequest::createSharedPointer()
 {
-	return std::unique_ptr<HttpRequest>(new HttpRequest());
+	return std::shared_ptr<HttpRequest>(new HttpRequest());
 }
 
 bool lly::HttpRequest::analyzeData( char* pData, int len )
@@ -624,8 +636,19 @@ bool lly::HttpRequest::setURL( const char *pszURL )
 	if (nPosFind != std::string::npos && nPosFind > 0)
 	{
 		//服务器地址，大小写不敏感
-		m_strServerIP = str.substr(nURLPos, nPosFind);
-		m_nServerPort = 80;
+		std::string strServer = str.substr(nURLPos, nPosFind);
+		
+		//如果是域名而不是ip地址，则转换
+		if (!std::regex_match(strServer, std::regex("(\\d{1,3}).(\\d{1,3}).(\\d{1,3}).(\\d{1,3})")))
+		{
+			char ip[256] = {0};
+			if (!Socket::parseDNS(strServer.c_str(), ip)) return false; //解析ip，出错则返回false
+			m_strServerIP = ip;
+		}
+		else
+		{
+			m_strServerIP = strServer;
+		}
 
 		//看是否有端口指定
 		int nSubFind = m_strServerIP.find(':');
@@ -634,7 +657,12 @@ bool lly::HttpRequest::setURL( const char *pszURL )
 			sscanf_s(m_strServerIP.substr(nSubFind + 1).c_str(), "%d", &m_nServerPort);
 			m_strServerIP.erase(nSubFind, m_strServerIP.size());
 		}
-		nURLPos == nPosFind;
+		else //否则使用默认
+		{
+			m_nServerPort = 80;
+		}
+
+		nURLPos = nPosFind;
 	}
 
 	m_strURL = pszURL + nURLPos;
@@ -743,7 +771,7 @@ bool lly::HttpRequest::geneData( std::string &str, HttpSocket::RequestMethod eMe
 
 void lly::HttpRequest::clear()
 {
-	m_ErrorCode = HttpSocket::Error::UNKNOWN;
+	m_ErrorCode = HTTP_ERROR_UNKNOWN;
 	m_bKeepAlive = false;
 	m_bWaitResponse = true;
 
@@ -765,7 +793,7 @@ void lly::HttpRequest::clearParam()
 
 //=====================================================
 
-lly::HttpResponse::HttpResponse()
+lly::HttpResponse::HttpResponse() : HttpDataBase()
 {
 
 }
@@ -775,9 +803,9 @@ lly::HttpResponse::~HttpResponse()
 
 }
 
-std::unique_ptr<HttpResponse> lly::HttpResponse::createUniquePointer()
+std::shared_ptr<HttpResponse> lly::HttpResponse::createSharedPointer()
 {
-	return std::unique_ptr<HttpResponse>(new HttpResponse());
+	return std::shared_ptr<HttpResponse>(new HttpResponse());
 }
 
 bool lly::HttpResponse::analyzeData( char* pData, int len )
@@ -788,9 +816,7 @@ bool lly::HttpResponse::analyzeData( char* pData, int len )
 	pData += 8;
 
 	//状态码
-	int nCode;
-	sscanf_s(pData, "%d", &nCode);
-	m_ErrorCode = (HttpSocket::Error)nCode;
+	sscanf_s(pData, "%d", &m_ErrorCode);
 
 	//跳过本行后面所有内容到第二行
 	while (*pData && *pData != 0x0d) ++pData;
@@ -887,11 +913,11 @@ bool lly::HttpResponse::geneData( std::string &str )
 	char szLine[256];
 	sprintf(szLine,
 		http_response_data_packet,
-		(int)m_ErrorCode, 
-		HttpSocket::getErrorMsg(m_ErrorCode),
+		m_ErrorCode, 
+		getErrorString(m_ErrorCode),
 		m_bKeepAlive ? "Keep-Alive" : "Close",
 		lenJson,
-		lenJson + m_lenExtraData,);
+		lenJson + m_lenExtraData);
 	str = szLine;
 
 	if (!m_strToken.empty())

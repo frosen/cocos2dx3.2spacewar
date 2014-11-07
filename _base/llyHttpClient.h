@@ -40,11 +40,12 @@ public:
 	//各种设置
 	void setServer(const char* pszServerIP, int nPort = 80);
 	void setThreadCount(int nThread);
-	void setToken(const char* pszToken) { m_strToken = pszToken; }	
+	void setTimeoutMS(int nMS) { m_nTimeout = nMS; }
 	void setRetryCount(int cnRetry){ m_nMaxRetry = cnRetry; }
+	void setToken(const char* token) { m_strToken = token; }
 
 	//开始执行
-	void run();
+	bool run();
 
 	//结束
 	void terminate();
@@ -98,15 +99,12 @@ protected:
 	NetStreamT<struCBInfo> m_listReqNormal; //正常发送队列
 	NetStreamT<struCBInfo> m_listReqQuick; //优先发送队列
 	NetStreamT<struCBInfo> m_listReqSync; //顺序发送队列
-
-	NetStream m_listError; //错误队列
 	
 	std::string m_strToken;
 	int64_t m_timeLogin64; //登录时间
 	int m_nTimeout; //超时
 
 	int m_nMaxRetry; //尝试次数
-
 };
 
 } //lly

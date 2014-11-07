@@ -1,8 +1,11 @@
 #include "llyHttpClient.h"
+#include "llyHttpSocket.h"
+#include "llyHttpErrorCode.h"
+
+#include "cocostudio\DictionaryHelper.h"
+
 #include <thread>
 #include <regex>
-#include "llyHttpSocket.h"
-#include "cocostudio\DictionaryHelper.h"
 
 USING_NS_CC;
 using namespace lly;
@@ -41,8 +44,7 @@ HttpClient* lly::HttpClient::getInstance()
 {
 	if (!s_httpClient)
 	{
-		s_httpClient = new HttpClient();
-		
+		s_httpClient = new HttpClient();	
 	}
 	return s_httpClient;
 }
@@ -77,15 +79,17 @@ void lly::HttpClient::setThreadCount( int nThread )
 	}
 }
 
-void lly::HttpClient::run()
+bool lly::HttpClient::run()
 {
-	assert(m_strServerIP != "", "wrong ip");
+	if(m_strServerIP == "") return false;
 	
 	for (int i = 0; i < m_nRunThread; ++i) //创建新线程
 	{
 		auto t = std::thread(&HttpClient::runHttpInteraction, this);
 		t.detach();
 	}
+
+	return true;
 }
 
 void lly::HttpClient::terminate()
@@ -213,8 +217,8 @@ void lly::HttpClient::runHttpInteraction()
 	struCBInfo cb; //收发信息的结构体
 	bool bProcessingSyncReq; //是否处理同步需求
 
-	HttpSocket::Error eErrorCode; //错误代码
-	int nSocketErrorCode;
+	int nHttpErrorCode = HTTP_ERROR_OK; //错误代码
+	int nSocketErrorCode = -100;
 	std::shared_ptr<HttpResponse> pAck;
 
 	lly::HttpSocket socket; //新建socket
@@ -297,10 +301,10 @@ void lly::HttpClient::runHttpInteraction()
 				}
 
 				//打印错误代码
-				eErrorCode = socket.getErrorCode();
-				nSocketErrorCode = (int)socket.getError();
+				nHttpErrorCode = socket.getErrorCode();
+				nSocketErrorCode = socket.getError();
 
-				CCLOG("wrong http = %d; socket = %d",(int)eErrorCode, nSocketErrorCode);
+				CCLOG("wrong http = %d; socket = %d",nHttpErrorCode, nSocketErrorCode);
 
 				//按失败处理
 				socket.close();
@@ -317,49 +321,49 @@ void lly::HttpClient::runHttpInteraction()
 			pAck = socket.recvResponse();
 
 			//错误代码
-			eErrorCode = socket.getErrorCode();
-			nSocketErrorCode = (int)socket.getError();
+			nHttpErrorCode = socket.getErrorCode();
+			nSocketErrorCode = socket.getError();
 
-			if (pAck) //有返回消息
+			if (!pAck) //无返回消息
 			{
-				if (eErrorCode == HttpSocket::Error::CHANGE_SERVER) //要求更换服务器
-				{				
-					rapidjson::Document* pJson = pAck->getJson();
-					const char*pszServerIP = DICTOOL->getStringValue_json(pJson, "Server");
-					int nPort = DICTOOL->getIntValue_json(pJson, "Port");
-					if (*pszServerIP != '\0' || nPort != 0)
-					{
-						m_strServerIP = pszServerIP;
-						m_nServerPort = nPort;
-
-						continue; //重新发生cb.Req
-					}
-					else //应该不会出现这样的情况
-					{
-						eErrorCode = HttpSocket::Error::UNKNOWN;
-					}				
-				}
-				else //其他消息
-				{
-					eErrorCode = pAck->getErrorCode();
-
-					//服务器要求关闭连接
-					if (!pAck->isKeepAlive()) socket.close();
-
-					//只有login才会返回token
-					if (!pAck->getToken().empty())
-					{
-						m_strToken = pAck->getToken();
-
-						//登录时间
-						struct timeval tval;
-						gettimeofday(&tval, NULL);
-						m_timeLogin64 = (long int)(tval.tv_sec * 1000000LL + tval.tv_usec); 
-					}
-				}
+				socket.close();
+				break;
 			}
 
-			if (!pAck || !bKeepAlive) socket.close();
+			if (nHttpErrorCode == HTTP_ERROR_CHANGE_SERVER) //要求更换服务器
+			{				
+				rapidjson::Document* pJson = pAck->getJson();
+				const char* pszServerIP = DICTOOL->getStringValue_json(pJson, "Server");
+				int nPort = DICTOOL->getIntValue_json(pJson, "Port");
+				if (*pszServerIP != '\0' || nPort != 0)
+				{
+					m_strServerIP = pszServerIP;
+					m_nServerPort = nPort;
+
+					continue; //重新发生cb.Req
+				}
+				else //应该不会出现这样的情况
+				{
+					nHttpErrorCode = HTTP_ERROR_UNKNOWN;
+					break;
+				}				
+			}
+
+			if (!pAck->getToken().empty()) //只有login才会返回token
+			{
+				m_strToken = pAck->getToken();
+
+				//登录时间
+				struct timeval tval;
+				gettimeofday(&tval, NULL);
+				m_timeLogin64 = (long int)(tval.tv_sec * 1000000LL + tval.tv_usec); 
+			}
+
+			//服务器要求关闭连接
+			if (!pAck->isKeepAlive()) socket.close();
+
+			//自己要求关闭链接
+			if (!bKeepAlive) socket.close();
 
 		} while (0);
 
@@ -367,7 +371,7 @@ void lly::HttpClient::runHttpInteraction()
 		mtx.lock();
 		Director::getInstance()->getScheduler()->performFunctionInCocosThread([=]()
 		{
-			cb.callback((int)eErrorCode, nSocketErrorCode, pAck);
+			cb.callback(nHttpErrorCode, nSocketErrorCode, pAck);
 		});
 		mtx.unlock();
 
@@ -389,7 +393,7 @@ void lly::HttpClient::runHttpInteraction()
 
 void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 {
-	HttpSocket::Error eErrorCode; //错误代码
+	int nHttpErrorCode; //错误代码
 	int nSocketErrorCode;
 	std::shared_ptr<HttpResponse> pAck;
 
@@ -435,7 +439,7 @@ void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 		{
 			pAck = socket.recvResponse();
 
-			eErrorCode = pAck->getErrorCode();
+			nHttpErrorCode = pAck->getErrorCode();
 			nSocketErrorCode = socket.getError();
 
 			//token换了，不干了
@@ -449,17 +453,14 @@ void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 				socket.close();
 				break; //回到开头
 			}
-			else if (eErrorCode == HttpSocket::Error::EMPTY) //空消息，相当于心跳消息，继续接收
+
+			if (nHttpErrorCode == HTTP_ERROR_EMPTY) //空消息，相当于心跳消息，继续接收
 			{
 				CCLOG("retain msg, empty msg");
 				continue; //回到开始接收
 			}
-			else if (eErrorCode == HttpSocket::Error::ANOTHER_LOGIN) //另一个登陆
-			{
-				bEndThisThread = true;
-				break;
-			}
-			else if (pAck->getErrorCode() != HttpSocket::Error::OK) //其他错误的消息
+
+			if (nHttpErrorCode != HTTP_ERROR_OK) //其他错误的消息
 			{
 				CCLOG("retain msg, not ok");
 
@@ -475,14 +476,15 @@ void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 			}
 	
 		}while(0);
-		//循环, 继续等待消息
 
 		mtx.lock();
 		Director::getInstance()->getScheduler()->performFunctionInCocosThread([=]()
 		{
-			cb.callback((int)eErrorCode, nSocketErrorCode, pAck);
+			cb.callback(nHttpErrorCode, nSocketErrorCode, pAck);
 		});
 		mtx.unlock();
+
+		//循环, 继续等待消息
 	}
 
 	//退出线程
