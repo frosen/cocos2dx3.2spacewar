@@ -9,27 +9,29 @@
 日期：2014.8.21
 */
 
-#ifndef _LLY_HTTP_SERVER_H_
-#define _LLY_HTTP_SERVER_H_
+#ifndef _LLY_HTTP_SERVER_BASE_H_
+#define _LLY_HTTP_SERVER_BASE_H_
 
-#include "cocos2d.h"
 #include "llyHttpSocket.h"
 
 #include <memory>
+#include <mutex>
 
 namespace lly{
 
-class HttpServer
+class HttpServerBase
 {
 public:
-	HttpServer();
-	virtual ~HttpServer();
+#define MAX_LENGTH_OF_ERROR_STRING (10 * 1024)
+
+	HttpServerBase();
+	virtual ~HttpServerBase();
 
 	//初始设置
 	void setRootDirAndPort(const char* pszRootDir, int nPort);
 	void setSettingFilePath(const char* settingFilePath);
 
-	void setTimeout(int nMS) { m_nTimeout = nMS; }
+	void setTimeoutMS(int nMS) { m_nTimeoutMS = nMS; }
 
 	//开始执行
 	bool run();
@@ -59,14 +61,14 @@ protected:
 	std::string m_strSettingFilePath;
 
 	//属性
-	int m_nTimeout; //超时
+	int m_nTimeoutMS; //超时
 	
 	std::string m_strErrorRecord; //错误记录
 };
 
 } //lly
 
-#endif //_LLY_HTTP_SERVER_H_
+#endif //_LLY_HTTP_SERVER_BASE_H_
 
 
 

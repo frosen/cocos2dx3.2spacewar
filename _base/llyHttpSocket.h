@@ -19,7 +19,6 @@ namespace lly{
 
 class HttpRequest;
 class HttpResponse;
-class Error;
 
 //http协议的socket
 class HttpSocket : public lly::Socket
@@ -47,8 +46,8 @@ public:
 	std::shared_ptr<HttpResponse> recvResponse();
 
 	//其他connect、send、recv的超时直接由基类的SetTimeout设置
-	void setTimeout(int nTimeout) { m_nTimeout = nTimeout; }
-	void setKeepAlive(bool bKeepAlive) { m_bKeepAlive = bKeepAlive; }
+	void setTimeoutMS(int nTimeout) { m_nTimeoutMS = nTimeout; }
+	int getTimeoutMS() { return m_nTimeoutMS; }
 
 	int getErrorCode() {return m_ErrorCode;}
 
@@ -62,10 +61,8 @@ protected:
 	std::string m_strIP; //IP
 	int m_nPort; //端口号
 
-	bool m_bKeepAlive; //是否保持连接，默认为true
-
 	int m_ErrorCode; //错误代码
-	int m_nTimeout; //超时，默认30秒
+	int m_nTimeoutMS; //超时，默认30秒，控制作为客户端时socket的超时，和读取http消息时的超时
 
 	//上一个消息读取数据时，可能会多读取了下一个消息的内容，在此保存
 	int m_lenPreReadBuf;

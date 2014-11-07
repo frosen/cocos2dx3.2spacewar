@@ -1,27 +1,29 @@
-#include "llyHttpServer.h"
+#include "llyHttpServerBase.h"
 #include "llyHttpErrorCode.h"
+#include <thread>
 
 using namespace lly;
 
-lly::HttpServer::HttpServer() :
+lly::HttpServerBase::HttpServerBase() :
 	m_strRootDir(""),
-	m_nPort(-1)
+	m_nPort(-1),
+	m_nTimeoutMS(3000)
 {
 
 }
 
-lly::HttpServer::~HttpServer()
+lly::HttpServerBase::~HttpServerBase()
 {
 	
 }
 
-void lly::HttpServer::setRootDirAndPort( const char* pszRootDir, int nPort )
+void lly::HttpServerBase::setRootDirAndPort( const char* pszRootDir, int nPort )
 {
 	m_strRootDir = pszRootDir;
 	m_nPort = nPort;
 }
 
-bool lly::HttpServer::run()
+bool lly::HttpServerBase::run()
 {
 	//1.检测基本设置
 	if (m_strRootDir == "" || m_nPort == -1) return false;
@@ -35,13 +37,13 @@ bool lly::HttpServer::run()
 	if (!socket.listen()) return false;
 
 	//4.开启线程，接收客户端的消息
-	auto t = std::thread(&HttpServer::runHttpInteractionThread, this);
+	auto t = std::thread(&HttpServerBase::runHttpInteractionThread, this);
 	t.detach();
 
 	return true;
 }
 
-void lly::HttpServer::recordErrorMsg( const char* msg, ... )
+void lly::HttpServerBase::recordErrorMsg( const char* msg, ... )
 {
 	mtx.lock();
 	char szErrorMsg[1024];
@@ -51,7 +53,8 @@ void lly::HttpServer::recordErrorMsg( const char* msg, ... )
 	va_end(va);
 
 	//记录错误报告不能过长
-	if (m_strErrorRecord.size() > 10*1024) m_strErrorRecord.clear();
+	if (m_strErrorRecord.size() > MAX_LENGTH_OF_ERROR_STRING) 
+		m_strErrorRecord.clear();
 
 	m_strErrorRecord += szErrorMsg;
 	m_strErrorRecord += "\r\n";
@@ -59,7 +62,7 @@ void lly::HttpServer::recordErrorMsg( const char* msg, ... )
 	mtx.unlock();
 }
 
-void lly::HttpServer::runHttpInteractionThread()
+void lly::HttpServerBase::runHttpInteractionThread()
 {
 	
 	SOCKET s; //套接字
@@ -74,15 +77,14 @@ void lly::HttpServer::runHttpInteractionThread()
 		}
 
 		//建立新线程处理请求，线程自己执行，最后自己删除
-		auto t = std::thread(&HttpServer::excuteRequestProcessingThread, this, s);
+		auto t = std::thread(&HttpServerBase::excuteRequestProcessingThread, this, s);
 		t.detach();
-
 	}
 
 	socket.close();
 }
 
-void lly::HttpServer::excuteRequestProcessingThread( SOCKET s )
+void lly::HttpServerBase::excuteRequestProcessingThread( SOCKET s )
 {
 	lly::HttpSocket socketRequest;
 
@@ -92,8 +94,11 @@ void lly::HttpServer::excuteRequestProcessingThread( SOCKET s )
 		return;
 	}
 
-	socketRequest.setTimeout(m_nTimeout);
-	socketRequest.lly::Socket::setTimeout(m_nTimeout);
+	//这个是为了设置recv的超时
+	socketRequest.setTimeout(m_nTimeoutMS); 
+
+	//因为服务器是先设置（attch）好了socket，所以必须也先设置socket的超时
+	socketRequest.lly::Socket::setTimeout(m_nTimeoutMS);
 
 	int nErrorCode = HTTP_ERROR_OK; //错误代码
 

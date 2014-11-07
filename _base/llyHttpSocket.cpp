@@ -25,8 +25,7 @@ inline void sleep(int n)
 
 lly::HttpSocket::HttpSocket() :
 	lly::Socket(),
-	m_nTimeout(30),
-	m_bKeepAlive(true),
+	m_nTimeoutMS(30000),
 	m_lenPreReadBuf(0),
 	m_pPreReadBuf(nullptr)
 {
@@ -58,7 +57,7 @@ bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
 			return false;
 		}
 
-		lly::Socket::setTimeout(m_nTimeout);
+		lly::Socket::setTimeout(m_nTimeoutMS);
 	}
 
 	std::string strHttpSend; //用http发送的数据流
@@ -173,7 +172,7 @@ char* lly::HttpSocket::recvHttpMsg_needfree( int &out_lenMsg )
 		m_pPreReadBuf = nullptr;
 	}
 
-	time_t timeStart = time(nullptr);
+	time_t timeStartMS = time(nullptr);
 
 	while (true)
 	{
@@ -225,7 +224,7 @@ char* lly::HttpSocket::recvHttpMsg_needfree( int &out_lenMsg )
 		}
 		else if (len == 0) //未收到信息
 		{
-			if (time(nullptr) - timeStart > m_nTimeout)
+			if (time(nullptr) - timeStartMS > m_nTimeoutMS)
 			{
 				m_ErrorCode = HTTP_ERROR_TIMEOUT;
 				break;
