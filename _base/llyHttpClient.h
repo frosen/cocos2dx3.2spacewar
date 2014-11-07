@@ -40,7 +40,7 @@ public:
 	//各种设置
 	void setServer(const char* pszServerIP, int nPort = 80);
 	void setThreadCount(int nThread);
-	void setTimeoutMS(int nMS) { m_nTimeout = nMS; }
+	void setTimeoutMS(int nMS) { m_nTimeoutMS = nMS; }
 	void setRetryCount(int cnRetry){ m_nMaxRetry = cnRetry; }
 	void setToken(const char* token) { m_strToken = token; }
 
@@ -102,7 +102,7 @@ protected:
 	
 	std::string m_strToken;
 	int64_t m_timeLogin64; //登录时间
-	int m_nTimeout; //超时
+	int m_nTimeoutMS; //超时毫秒，会在进入线程时候设置lly::socket的超时
 
 	int m_nMaxRetry; //尝试次数
 };

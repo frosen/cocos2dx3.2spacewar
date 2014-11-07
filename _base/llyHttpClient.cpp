@@ -29,7 +29,7 @@ lly::HttpClient::HttpClient() :
 	m_bNeedQuit(false),
 	m_bProcessingSyncReq(false),
 	m_timeLogin64(0),
-	m_nTimeout(30),
+	m_nTimeoutMS(30000),
 	m_nMaxRetry(5)
 {
 
@@ -222,7 +222,7 @@ void lly::HttpClient::runHttpInteraction()
 	std::shared_ptr<HttpResponse> pAck;
 
 	lly::HttpSocket socket; //新建socket
-	socket.setTimeout(m_nTimeout);
+	socket.setTimeoutMS(m_nTimeoutMS);
 
 	int nRetry = 1; //尝试次数
 	int nWaitMS = 100; //等待毫秒数
@@ -400,7 +400,7 @@ void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 	lly::HttpSocket socket;
 
 	//持久连接需要的时间要长，服务器端60秒会发送一个消息
-	socket.setTimeout(80);
+	socket.setTimeout(m_nTimeoutMS * 3);
 
 	int nWaitTimeForRetry_ms = 10;
 	int64_t timeLogin64 = m_timeLogin64;
