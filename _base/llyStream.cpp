@@ -1,4 +1,4 @@
-#include "llyNetStream.h"
+#include "llyStream.h"
 
 #ifdef WIN32
 	#include <winsock2.h>
@@ -8,7 +8,7 @@
 
 using namespace lly;
 
-lly::NetStream::NetStream(int room) : 
+lly::DataStream::DataStream(int room) : 
 	m_pBuf(nullptr),
 	m_lenAlloc(0),
 	m_nPosBegin(0),
@@ -16,40 +16,40 @@ lly::NetStream::NetStream(int room) :
 {
 	if (room > 0)
 	{
-		m_pBuf=(char *)malloc(room);
+		m_pBuf = (char*)malloc(room);
 		m_lenAlloc = room;
 	}
 }
 
-lly::NetStream::~NetStream()
+lly::DataStream::~DataStream()
 {
 	if (m_pBuf != nullptr) free(m_pBuf);
 }
 
-int lly::NetStream::getDataLen()
+int lly::DataStream::getDataLen()
 {
 	return m_nPosEnd - m_nPosBegin; //从头到尾的距离
 }
 
-bool lly::NetStream::setPosBegin( int nPos )
+bool lly::DataStream::setPosBegin( int nPos )
 {
 	if (nPos < 0 || nPos > m_lenAlloc) return false;
 	m_nPosBegin = nPos;
 	return true;
 }
 
-bool lly::NetStream::addStream( const char *pBuf, int len )
+bool lly::DataStream::addStream( const char* pBuf, int len )
 {
 	if (m_nPosBegin == m_nPosEnd) clear();
 
-	if (m_lenAlloc - m_nPosEnd < len) //尾部剩余空间如果够就直接复制
+	if (m_lenAlloc - m_nPosEnd < len) //尾部剩余空间不够，不能直接复制
 	{
 		lenStream = m_nPosEnd - m_nPosBegin;
 
-		if (m_lenAlloc - lenStream < len) //空间不够则重新分配空间
+		if (m_lenAlloc - lenStream < len * 2) //空间不够则重新分配空间 *2是为了优化效率
 		{
-			int lenNeed = (m_nPosEnd - m_nPosBegin + len) * 2; //获取所需要的两倍的空间
-			char *pTmp=(char *)malloc(lenNeed);
+			int lenNeed = (m_nPosEnd - m_nPosBegin + len * 2) * 2; //获取所需要的两倍的空间
+			char* pTmp = (char*)malloc(lenNeed);
 			if (pTmp == nullptr) return false;
 		
 			memcpy(pTmp, m_pBuf+m_nPosBegin, lenStream); //把原来的流拷贝到新空间
@@ -73,9 +73,12 @@ bool lly::NetStream::addStream( const char *pBuf, int len )
 	return true;
 }
 
-bool lly::NetStream::getStream( char *pBuf, int len )
+bool lly::DataStream::getStream( char* pBuf, int len )
 {
 	lenStream = m_nPosEnd - m_nPosBegin;
+
+	if (lenStream == 0) return false;
+
 	len = len < lenStream ? len : lenStream;
 
 	memcpy(pBuf, m_pBuf + m_nPosBegin, len);
@@ -84,7 +87,7 @@ bool lly::NetStream::getStream( char *pBuf, int len )
 	return true;
 }
 
-bool lly::NetStream::getChar( char &ch )
+bool lly::DataStream::getChar( char &ch )
 {
 	lenStream = m_nPosEnd - m_nPosBegin;
 	if (lenStream < sizeof(char)) return false;
@@ -95,7 +98,7 @@ bool lly::NetStream::getChar( char &ch )
 	return true;
 }
 
-bool lly::NetStream::getShortInt( short int &n )
+bool lly::DataStream::getShortInt( short int &n )
 {
 	lenStream = m_nPosEnd - m_nPosBegin;
 	if (lenStream < sizeof(short int)) return false;
@@ -106,7 +109,7 @@ bool lly::NetStream::getShortInt( short int &n )
 	return true;
 }
 
-bool lly::NetStream::getInt( int &n )
+bool lly::DataStream::getInt( int &n )
 {
 	lenStream = m_nPosEnd - m_nPosBegin;
 	if (lenStream < sizeof(int)) return false;
@@ -117,7 +120,7 @@ bool lly::NetStream::getInt( int &n )
 	return true;
 }
 
-bool lly::NetStream::getFloat( float &f )
+bool lly::DataStream::getFloat( float &f )
 {
 	lenStream = m_nPosEnd - m_nPosBegin;
 	if (lenStream < sizeof(float)) return false;
@@ -128,7 +131,7 @@ bool lly::NetStream::getFloat( float &f )
 	return true;
 }
 
-bool lly::NetStream::getString( std::string &str )
+bool lly::DataStream::getString( std::string &str )
 {
 	for (int i = m_nPosBegin; i < m_nPosEnd; ++i)
 	{
@@ -142,29 +145,29 @@ bool lly::NetStream::getString( std::string &str )
 	return false;
 }
 
-bool lly::NetStream::putChar( char ch )
+bool lly::DataStream::putChar( char ch )
 {
 	return addStream(&ch, sizeof(char));
 }
 
-bool lly::NetStream::putShortInt( short int n )
+bool lly::DataStream::putShortInt( short int n )
 {
 	n=htons(n);
-	return addStream((char *)&n, sizeof(short int));
+	return addStream((char*)&n, sizeof(short int));
 }
 
-bool lly::NetStream::putInt( int n )
+bool lly::DataStream::putInt( int n )
 {
 	n=htonl(n);
-	return addStream((char *)&n, sizeof(int));
+	return addStream((char*)&n, sizeof(int));
 }
 
-bool lly::NetStream::putFloat( float f )
+bool lly::DataStream::putFloat( float f )
 {
-	return addStream((char *)&f, sizeof(float));
+	return addStream((char*)&f, sizeof(float));
 }
 
-bool lly::NetStream::putString( const char *pStr )
+bool lly::DataStream::putString( const char* pStr )
 {
 	return addStream(pStr, strlen(pStr)+1);
 }

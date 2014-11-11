@@ -39,14 +39,14 @@ public:
 	HttpSocket();
 	virtual ~HttpSocket();
 
-	bool sendRequest(std::shared_ptr<HttpRequest> pReq);
-	bool sendResponse(std::shared_ptr<HttpResponse> pAck);
+	bool sendRequest(HttpRequest* pReq);
+	bool sendResponse(HttpResponse* pAck);
 
-	std::shared_ptr<HttpRequest> recvRequest();
-	std::shared_ptr<HttpResponse> recvResponse();
+	HttpRequest* recvRequest();
+	HttpResponse* recvResponse();
 
-	//其他connect、send、recv的超时直接由基类的SetTimeout设置
-	void setTimeoutMS(int nTimeout) { m_nTimeoutMS = nTimeout; }
+	//超时
+	void setTimeoutMS(int nTimeout); //同时修改基类的SetTimeout设置
 	int getTimeoutMS() { return m_nTimeoutMS; }
 
 	int getErrorCode() {return m_ErrorCode;}

@@ -62,9 +62,15 @@ void lly::HttpServerBase::recordErrorMsg( const char* msg, ... )
 	mtx.unlock();
 }
 
+void lly::HttpServerBase::clearErrorMsg()
+{
+	mtx.lock();
+	m_strErrorRecord.clear();
+	mtx.unlock();
+}
+
 void lly::HttpServerBase::runHttpInteractionThread()
 {
-	
 	SOCKET s; //套接字
 
 	while (true)
@@ -95,16 +101,17 @@ void lly::HttpServerBase::excuteRequestProcessingThread( SOCKET s )
 	}
 
 	//这个是为了设置recv的超时
-	socketRequest.setTimeout(m_nTimeoutMS); 
-
-	//因为服务器是先设置（attch）好了socket，所以必须也先设置socket的超时
-	socketRequest.lly::Socket::setTimeout(m_nTimeoutMS);
+	socketRequest.setTimeoutMS(m_nTimeoutMS);
 
 	int nErrorCode = HTTP_ERROR_OK; //错误代码
 
+	HttpRequest* pReq = nullptr;
+
 	while (true)
 	{
-		auto pReq = socketRequest.recvRequest();
+		if (pReq) delete pReq;
+
+		pReq = socketRequest.recvRequest();
 
 		if (!pReq)
 		{
@@ -126,16 +133,20 @@ void lly::HttpServerBase::excuteRequestProcessingThread( SOCKET s )
 		if (!bKeepAlive) break;
 	}
 
+	if (pReq) delete pReq;
+
 	//有错误则发送错误代码
 	if (nErrorCode != HTTP_ERROR_OK) 
 	{
 		auto pAck = new HttpResponse();
 		pAck->setErrorCode(nErrorCode);
-		socketRequest.sendResponse(std::shared_ptr<lly::HttpResponse>(pAck));
+		socketRequest.sendResponse(pAck);
+		delete pAck;
 	}
 
 	//关闭socket
 	socketRequest.close();
 }
+
 
 

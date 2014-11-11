@@ -37,7 +37,7 @@ lly::HttpSocket::~HttpSocket()
 	if (m_pPreReadBuf != nullptr) free(m_pPreReadBuf);
 }
 
-bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
+bool lly::HttpSocket::sendRequest( HttpRequest* pReq )
 {
 	m_ErrorCode = HTTP_ERROR_UNKNOWN;
 
@@ -77,7 +77,7 @@ bool lly::HttpSocket::sendRequest( std::shared_ptr<HttpRequest> pReq )
 	}
 }
 
-bool lly::HttpSocket::sendResponse( std::shared_ptr<HttpResponse> pAck )
+bool lly::HttpSocket::sendResponse( HttpResponse* pAck )
 {
 	m_ErrorCode = HTTP_ERROR_UNKNOWN;
 
@@ -97,7 +97,7 @@ bool lly::HttpSocket::sendResponse( std::shared_ptr<HttpResponse> pAck )
 	}	
 }
 
-std::shared_ptr<HttpRequest> lly::HttpSocket::recvRequest()
+HttpRequest* lly::HttpSocket::recvRequest()
 {
 	int lenBuf;
 	char* pBuf = recvHttpMsg_needfree(lenBuf);
@@ -118,10 +118,10 @@ std::shared_ptr<HttpRequest> lly::HttpSocket::recvRequest()
 		m_ErrorCode = pReq->getErrorCode();
 	}
 
-	return std::shared_ptr<HttpRequest>(pReq);
+	return pReq;
 }
 
-std::shared_ptr<HttpResponse> lly::HttpSocket::recvResponse()
+HttpResponse* lly::HttpSocket::recvResponse()
 {
 	int lenBuf;
 	
@@ -129,7 +129,7 @@ std::shared_ptr<HttpResponse> lly::HttpSocket::recvResponse()
 	
 	if (pBuf == nullptr) return nullptr;
 
-	HttpResponse* pAck=new HttpResponse();
+	HttpResponse* pAck = new HttpResponse();
 	if (pAck == nullptr)
 	{
 		free(pBuf);
@@ -144,7 +144,13 @@ std::shared_ptr<HttpResponse> lly::HttpSocket::recvResponse()
 		m_ErrorCode = pAck->getErrorCode();
 	}
 
-	return std::shared_ptr<HttpResponse>(pAck);
+	return pAck;
+}
+
+void lly::HttpSocket::setTimeoutMS( int nTimeout )
+{
+	m_nTimeoutMS = nTimeout;
+	lly::Socket::setTimeout(nTimeout);
 }
 
 int lly::HttpSocket::close()
@@ -293,6 +299,7 @@ char* lly::HttpSocket::recvHttpMsg_needfree( int &out_lenMsg )
 	pMsg[out_lenMsg] = '\0';
 	return pMsg;
 }
+
 
 //==========================================
 
@@ -638,7 +645,7 @@ bool lly::HttpRequest::setURL( const char *pszURL )
 		std::string strServer = str.substr(nURLPos, nPosFind);
 		
 		//如果是域名而不是ip地址，则转换
-		if (!std::regex_match(strServer, std::regex("(\\d{1,3}).(\\d{1,3}).(\\d{1,3}).(\\d{1,3})")))
+		if (!std::regex_match(strServer, std::regex("\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3}:\\d{1,5}")))
 		{
 			char ip[256] = {0};
 			if (!Socket::parseDNS(strServer.c_str(), ip)) return false; //解析ip，出错则返回false

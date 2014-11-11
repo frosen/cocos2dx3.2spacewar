@@ -7,6 +7,7 @@
 #include <thread>
 #include <regex>
 
+
 USING_NS_CC;
 using namespace lly;
 using namespace cocostudio;
@@ -20,6 +21,10 @@ inline void sleep(int n)
 	::usleep(n*1000);
 #endif
 }
+
+#ifndef MIN
+#define MIN(x,y) (((x) > (y)) ? (y) : (x))
+#endif  // MIN
 
 HttpClient* lly::HttpClient::s_httpClient = nullptr;
 
@@ -79,17 +84,19 @@ void lly::HttpClient::setThreadCount( int nThread )
 	}
 }
 
-bool lly::HttpClient::run()
+void lly::HttpClient::run()
 {
-	if(m_strServerIP == "") return false;
-	
-	for (int i = 0; i < m_nRunThread; ++i) //创建新线程
+	//初始化通道，预制5个空位
+	m_listReqNormal = new StructStream<CBInfo>(5);
+	m_listReqQuick = new StructStream<CBInfo>(5);
+	m_listReqSync = new StructStream<CBInfo>(5);
+
+	//创建新线程
+	for (int i = 0; i < m_nRunThread; ++i) 
 	{
 		auto t = std::thread(&HttpClient::runHttpInteraction, this);
 		t.detach();
 	}
-
-	return true;
 }
 
 void lly::HttpClient::terminate()
@@ -101,12 +108,10 @@ bool lly::HttpClient::send( lly::HttpRequest* pReq, HttpClientCallback callback 
 {
 	if (pReq->m_strServerIP.empty()) pReq->setServer(m_strServerIP.c_str(), m_nServerPort);
 
-	struCBInfo cb;
-	cb.pReq = std::shared_ptr<HttpRequest>(pReq);
-	cb.callback = callback;
+	CBInfo cb(pReq, callback);
 
 	mtx.lock();
-	m_listReqNormal.putT(cb);
+	m_listReqNormal->putStruct(cb);
 	mtx.unlock();
 
 	return true;
@@ -130,12 +135,10 @@ bool lly::HttpClient::sendQuick( lly::HttpRequest* pReq, HttpClientCallback call
 {
 	if (pReq->m_strServerIP.empty()) pReq->setServer(m_strServerIP.c_str(), m_nServerPort);
 
-	struCBInfo cb;
-	cb.pReq = std::shared_ptr<HttpRequest>(pReq);
-	cb.callback = callback;
+	CBInfo cb(pReq, callback);
 
 	mtx.lock();
-	m_listReqQuick.putT(cb);
+	m_listReqQuick->putStruct(cb);
 	mtx.unlock();
 
 	return true;
@@ -157,12 +160,10 @@ bool lly::HttpClient::sendSync( lly::HttpRequest* pReq, HttpClientCallback callb
 {
 	if (pReq->m_strServerIP.empty()) pReq->setServer(m_strServerIP.c_str(), m_nServerPort);
 
-	struCBInfo cb;
-	cb.pReq = std::shared_ptr<HttpRequest>(pReq);
-	cb.callback = callback;
+	CBInfo cb(pReq, callback);
 
 	mtx.lock();
-	m_listReqSync.putT(cb);
+	m_listReqSync->putStruct(cb);
 	mtx.unlock();
 
 	return true;
@@ -184,10 +185,7 @@ bool lly::HttpClient::addRetainChannel( lly::HttpRequest *pReq, HttpClientCallba
 {
 	if (pReq->m_strServerIP.empty()) pReq->setServer(m_strServerIP.c_str(), m_nServerPort);
 
-	struCBInfo cb;
-
-	cb.pReq = std::shared_ptr<HttpRequest>(pReq);
-	cb.callback = callback;
+	CBInfo cb(pReq, callback);
 
 	auto t = std::thread(&HttpClient::runHttpRetainInteraction, this, cb);
 	t.detach();
@@ -214,19 +212,19 @@ bool lly::HttpClient::addRetainChannel( const char *pszURL, HttpClientCallback c
 //======================================
 void lly::HttpClient::runHttpInteraction()
 {
-	struCBInfo cb; //收发信息的结构体
+	CBInfo cb; //收发信息的结构体
 	bool bProcessingSyncReq; //是否处理同步需求
 
 	int nHttpErrorCode = HTTP_ERROR_OK; //错误代码
 	int nSocketErrorCode = -100;
-	std::shared_ptr<HttpResponse> pAck;
+	HttpResponse* pAck = nullptr;
 
 	lly::HttpSocket socket; //新建socket
 	socket.setTimeoutMS(m_nTimeoutMS);
 
 	int nRetry = 1; //尝试次数
 	int nWaitMS = 100; //等待毫秒数
-
+	
 	while (true) 
 	{
 		if (m_bNeedQuit) break;
@@ -240,10 +238,10 @@ void lly::HttpClient::runHttpInteraction()
 		do 
 		{
 			//先检查优先队列，成功获得cb则不进行下面列队的检测
-			if (m_listReqQuick.getT(cb)) break;
+			if (m_listReqQuick->getStruct(cb)) break;
 
 			//在检查同步队列，成功获得cb则不进行下面列队的检测
-			if (!m_bProcessingSyncReq && m_listReqSync.getT(cb))
+			if (!m_bProcessingSyncReq && m_listReqSync->getStruct(cb))
 			{
 				m_bProcessingSyncReq = true;
 				bProcessingSyncReq = true;
@@ -251,7 +249,7 @@ void lly::HttpClient::runHttpInteraction()
 			}
 
 			//检查一般队列
-			if (m_listReqNormal.getT(cb)) break;
+			if (m_listReqNormal->getStruct(cb)) break;			
 			
 		} while (0);
 		
@@ -296,7 +294,7 @@ void lly::HttpClient::runHttpInteraction()
 					sleep(nWaitMS);
 
 					//最多等待不超过半分钟
-					nWaitMS = MIN(nWaitMS * 2, 30 * 1000);
+					nWaitMS = MIN(nWaitMS * 2, 30000);
 					continue;
 				}
 
@@ -318,6 +316,7 @@ void lly::HttpClient::runHttpInteraction()
 			}
 
 			//3.发送完后需要接受消息
+			if (pAck) delete pAck;
 			pAck = socket.recvResponse();
 
 			//错误代码
@@ -385,22 +384,24 @@ void lly::HttpClient::runHttpInteraction()
 		//继续循环
 	}
 
+	if (pAck) delete pAck;
+
 	//线程结束
 	mtx.lock();
 	--m_nRunThread;
 	mtx.unlock();
 }
 
-void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
+void lly::HttpClient::runHttpRetainInteraction(CBInfo cb)
 {
 	int nHttpErrorCode; //错误代码
 	int nSocketErrorCode;
-	std::shared_ptr<HttpResponse> pAck;
+	HttpResponse* pAck = nullptr;
 
 	lly::HttpSocket socket;
 
 	//持久连接需要的时间要长，服务器端60秒会发送一个消息
-	socket.setTimeout(m_nTimeoutMS * 3);
+	socket.setTimeout(80000);
 
 	int nWaitTimeForRetry_ms = 10;
 	int64_t timeLogin64 = m_timeLogin64;
@@ -430,13 +431,14 @@ void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 			sleep(nWaitTimeForRetry_ms);
 
 			//网络不好的时候最多等待30秒
-			nWaitTimeForRetry_ms = MIN(nWaitTimeForRetry_ms * 2, 30 * 1000);
+			nWaitTimeForRetry_ms = MIN(nWaitTimeForRetry_ms * 2, 30000);
 			continue;
 		}	
 
 		//接收开始
 		do
 		{
+			if (pAck) delete pAck;
 			pAck = socket.recvResponse();
 
 			nHttpErrorCode = pAck->getErrorCode();
@@ -486,6 +488,8 @@ void lly::HttpClient::runHttpRetainInteraction(struCBInfo cb)
 
 		//循环, 继续等待消息
 	}
+
+	if (pAck) delete pAck;
 
 	//退出线程
 	mtx.lock();

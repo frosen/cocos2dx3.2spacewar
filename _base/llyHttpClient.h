@@ -11,7 +11,7 @@
 #define _LLY_HTTP_CLIENT_H_
 
 #include "cocos2d.h"
-#include "llyNetStream.h"
+#include "llyStream.h"
 #include "llyHttpSocket.h"
 
 #include <mutex>
@@ -22,11 +22,17 @@ class HttpClient
 {
 public:
 	typedef std::function<
-		void(int nHttpError, int nSocketError, std::shared_ptr<lly::HttpResponse>)> HttpClientCallback;
+		void(int nHttpError, int nSocketError, lly::HttpResponse*)> HttpClientCallback;
 
-	struct struCBInfo
+	//可自动释放其中httpresponse的内存
+	class CBInfo
 	{
-		std::shared_ptr<lly::HttpRequest> pReq;
+	public:
+		CBInfo() : pReq(nullptr) {}
+		CBInfo(lly::HttpRequest* r, HttpClientCallback b) : pReq(r), callback(b) {}
+		~CBInfo() { if(pReq) delete pReq; }
+
+		lly::HttpRequest* pReq;
 		HttpClientCallback callback;
 	};
 
@@ -45,7 +51,7 @@ public:
 	void setToken(const char* token) { m_strToken = token; }
 
 	//开始执行
-	bool run();
+	void run();
 
 	//结束
 	void terminate();
@@ -81,7 +87,7 @@ protected:
 	//执行http交互
 	void runHttpInteraction();
 
-	void runHttpRetainInteraction(struCBInfo cb);
+	void runHttpRetainInteraction(CBInfo cb);
 
 protected:
 	static HttpClient* s_httpClient;
@@ -96,9 +102,9 @@ protected:
 	bool m_bNeedQuit; //需要结束
 	bool m_bProcessingSyncReq; //是否处理同步列队
 
-	NetStreamT<struCBInfo> m_listReqNormal; //正常发送队列
-	NetStreamT<struCBInfo> m_listReqQuick; //优先发送队列
-	NetStreamT<struCBInfo> m_listReqSync; //顺序发送队列
+	StructStream<CBInfo>* m_listReqNormal; //正常发送队列
+	StructStream<CBInfo>* m_listReqQuick; //优先发送队列
+	StructStream<CBInfo>* m_listReqSync; //顺序发送队列
 	
 	std::string m_strToken;
 	int64_t m_timeLogin64; //登录时间

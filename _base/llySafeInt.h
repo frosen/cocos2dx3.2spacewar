@@ -42,6 +42,9 @@ public:
 	void operator -=(int n) { nPrivate += n; }//减法·
 
 	//乘除
+	SafeInt& operator *(int n) { nPrivate = (nPrivate - nPasswords)*n + nPasswords; return *this; }//乘法
+	SafeInt& operator /(int n) { nPrivate = (nPrivate - nPasswords)/n + nPasswords; return *this; }//除法·
+
 	void operator *=(float n) { nPrivate = (nPrivate - nPasswords)*n + nPasswords; }//乘法
 	void operator /=(float n) { nPrivate = (nPrivate - nPasswords)/n + nPasswords; }//除法·
 

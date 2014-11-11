@@ -38,6 +38,8 @@ public:
 
 	//记录错误
 	void recordErrorMsg(const char* msg, ...);
+	std::string getErrorMsg() { return m_strErrorRecord; }
+	void clearErrorMsg();
 
 protected:
 	//开始时读入设置文件里面的属性
@@ -50,10 +52,10 @@ protected:
 	//处理客户端发来的消息，然后使用sendResponse返回，必须继承
 	//返回一个错误码，若不是ok，则发送错误报告给客户端
 	virtual void processRequest(
-		lly::HttpSocket socketReq, std::shared_ptr<HttpRequest> pReq, int &out_nErrorCode) = 0;
+		lly::HttpSocket socketReq, HttpRequest* pReq, int &out_nErrorCode) = 0;
 
 protected:
-	lly::HttpSocket socket;
+	lly::Socket socket;
 	std::mutex mtx; //线程锁
 
 	std::string m_strRootDir; //数据根目录
