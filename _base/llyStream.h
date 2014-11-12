@@ -55,7 +55,7 @@ protected:
 	int lenStream; //内容长度
 };
 
-//模板类的网络流，设定一个模板，进行流的使用
+//模板类的网络流，设定一个模板，进行流的使用，可以放置任何的东西
 template <class T>
 class StructStream
 {
@@ -123,7 +123,7 @@ bool lly::StructStream<T>::putStruct( T &t )
 
 		if (m_lenAlloc - lenStream < 2) //空间不够则重新分配空间，用2是为了优化效率
 		{
-			int lenNeed = (m_nPosEnd - m_nPosBegin + 2) * 2; //获取所需要的两倍的空间
+			int lenNeed = (m_nPosEnd - m_nPosBegin + 1) * 2; //获取所需要的两倍的空间
 			T* pTmp = new T[lenNeed];
 			if (pTmp == nullptr) return false;
 

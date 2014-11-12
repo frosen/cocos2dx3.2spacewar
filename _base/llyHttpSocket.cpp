@@ -196,26 +196,27 @@ char* lly::HttpSocket::recvHttpMsg_needfree( int &out_lenMsg )
 				lenChar1 = 2; //\n\n
 			}
 
-			if (sPos != nullptr) //说明有一般内容
+			if (sPos != nullptr) //说明有一般内容，没有的话，不改变lenMsg，意味着继续接收
 			{
+				//请求头部的长度，利用指针想减得出
+				out_lenMsg = sPos + lenChar1 - pMsg;
+
 				char* sPos2 = strstr(pMsg, "Content-Length:");
 				if (sPos2 != nullptr)
 				{
-					//请求头部的长度，利用指针想减得出
-					int lenHeadContents = sPos + lenChar1 - pMsg; //数字为
-
 					//请求内容的长度，用头部记录的数据得出
 					int lenBodyContents;
 					sscanf_s(sPos2 + lenChar2, "%d", &lenBodyContents);
 
-					out_lenMsg = lenHeadContents + lenBodyContents;
-
-					if (out_lenMsg > (int)Data::MAXLEN) break;
+					out_lenMsg += lenBodyContents;
 				}
+
+				if (out_lenMsg > (int)Data::MAXLEN) break;
 			}
 		}
 
-		if (0 < out_lenMsg && out_lenMsg <= lenMsgRecv) //?
+		//如果计算出来的lenMsg大于接受到的数据lenMsgRecv，说明还有数据没接收到，则继续接收
+		if (0 < out_lenMsg && out_lenMsg <= lenMsgRecv) 
 		{
 			m_ErrorCode = HTTP_ERROR_OK;
 			break;

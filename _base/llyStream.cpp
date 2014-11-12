@@ -48,7 +48,7 @@ bool lly::DataStream::addStream( const char* pBuf, int len )
 
 		if (m_lenAlloc - lenStream < len * 2) //空间不够则重新分配空间 *2是为了优化效率
 		{
-			int lenNeed = (m_nPosEnd - m_nPosBegin + len * 2) * 2; //获取所需要的两倍的空间
+			int lenNeed = (m_nPosEnd - m_nPosBegin + len) * 2; //获取所需要的两倍的空间
 			char* pTmp = (char*)malloc(lenNeed);
 			if (pTmp == nullptr) return false;
 		
