@@ -4,6 +4,13 @@
 			带光标
 			光标可处于任何位置
 
+			安卓中，横屏下，为了让输入法不全屏化遮挡输入区域
+				需要在libcocos2d
+				中的Cocos2dxGLSurfaceView.java
+				中的setCocos2dxEditText
+				的if后面，添加
+				int oldImeOptions = this.mCocos2dxEditText.getImeOptions();
+				this.mCocos2dxEditText.setImeOptions(oldImeOptions | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
 		
 制作：卢乐颜
 日期：2014.4.30

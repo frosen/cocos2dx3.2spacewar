@@ -1,6 +1,7 @@
 /*
 	名称：llyCharCodeConversion.h
 	描述：字符串转换类，有跨平台处理
+				安卓下使用，需要在android.mk文件中最后增加$(call import-module,android/support)
 	作者：乐颜
 	日期：2014.7.30
 */
