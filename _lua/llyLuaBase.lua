@@ -138,6 +138,14 @@ end
 
 
 
+
+--【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
+local structID = 0 
+local function getUniqueStructID()
+	structID = structID + 1
+	return structID
+end
+
 ---
 --使类的实例最终化，也就是这之后不能再添加新的属性，避免因写错名称但无法检测而造成的麻烦
 --适用于
@@ -146,8 +154,6 @@ end
 --	自定义的结构
 --	自定义的有限项目数组
 --最终release时，可把此函数内容注释掉
-
-
 
 --【私有】保存原有的mt的index函数
 local mt_table = {}
@@ -350,13 +356,6 @@ function lly.class(classname, super)
 	end
 
 	return cls
-end
-
---【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
-local structID = 0 
-local function getUniqueStructID()
-	structID = structID + 1
-	return structID
 end
 
 --创建一个结构体，基本为 一个简化的创建类的方法
