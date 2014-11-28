@@ -5,7 +5,22 @@
 --卢乐颜
 --2014.11.2
 
-local lly = {}
+local lly = {
+	traceback = true,
+	log = true,
+	logCurLocAnd = true,
+	logTraceback = true,
+	logTable = true,
+	error = true,
+	finalizeGlobalEnvironment = true,
+	finalizeCurrentEnvironment = true,
+	finalizeInstance = true,
+	class = true,
+	struct = true,
+	array = true,
+	const = true,
+	ensure = true,
+}
 
 --用于main函数，进行错误输出，用法如下
 --local status, msg = xpcall(main, lly.traceback)
@@ -90,6 +105,12 @@ function lly.logTable(t, index)
 	--]====]
 end
 
+--错误
+function lly.error(errorStr, n)
+	if not n then n = 2 end
+	error("(>_<)/" .. errorStr, n)
+end
+
 ---
 --禁止产生全局变量的函数，定义在主函数中，此后将不可新建全局变量，避免因写错名称但无法检测而造成的麻烦
 
@@ -140,11 +161,13 @@ end
 
 
 --【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
+---[====[
 local structID = 0 
 local function getUniqueStructID()
 	structID = structID + 1
 	return structID
 end
+--]====]
 
 ---
 --使类的实例最终化，也就是这之后不能再添加新的属性，避免因写错名称但无法检测而造成的麻烦
@@ -155,12 +178,15 @@ end
 --	自定义的有限项目数组
 --最终release时，可把此函数内容注释掉
 
---【私有】保存原有的mt的index函数
-local mt_table = {}
+--【私有】保存是否已经修改了本类的index 和newindex 修改了则不用再修改，ID防止ins的__ID
+---[====[
+local isModify_table = {}
+local ID_table = {}
+--]====]
 
 --最终化
 --注意：如果userdata的tolua.type一致，则会使用同一个元表，这意味着自己继承一个类，比如layer，所有layer的元表会改变
---     	因此，在mt_table中，我使用tolua.type(ins)获得同类的元表并记录，在index中检测是否是同种元表
+--     	因此，在isModify_table中，我使用tolua.type(ins)获得同类的元表并记录，在index中检测是否是同种元表
 --		另外利用__ID获得当前对象的唯一值，以防止对象之间相互影响
 function lly.finalizeInstance(ins)
 	---[====[
@@ -168,42 +194,32 @@ function lly.finalizeInstance(ins)
 
 	if mt ~= nil and type(ins) == "userdata" then --有元表
 
+		if type(ins.__ID) ~= "number" then error("no __ID") end --么有ID就不是自定义的类，不能final
+
+		ID_table[ins.__ID] = true --保存ID
+
 		local strClassName = tolua.type(ins) --对象的类名
+		if isModify_table[strClassName] == true then return end --如果有说明已经修改
 
-		if mt_table[strClassName] == nil then
-			mt_table[strClassName] = {}
-			mt_table[strClassName].__index = mt.__index
-			mt_table[strClassName].__newindex = mt.__newindex
-			mt_table[strClassName].ID = {}
-		end
+		isModify_table[strClassName] = true
 
-		mt_table[strClassName].ID[#mt_table[strClassName].ID + 1] = ins.__ID
+		local mtindex = mt.__index
+		local mtnewindex = mt.__newindex
 
 		mt.__index = function (t, k)
-			local mt = mt_table[tolua.type(t)]
-			local __idxTmp = mt.__index
-
-			if __idxTmp == nil then error("wrong __index " .. tolua.type(t)) end
-
 			local result = nil
-			local id = nil --cname用于区分是否是自定义的类
-			if type(__idxTmp) == "function" then
-				result = __idxTmp(t, k)
-				id = __idxTmp(t, "__ID")
+			local id = nil
+			if type(mtindex) == "function" then
+				result = mtindex(t, k)
+				id = mtindex(t, "__ID")
 			else
-				result = __idxTmp[k]
-				id = __idxTmp["__ID"]
+				result = mtindex[k]
+				id = mtindex["__ID"]
 			end
 
-			local b = false
-			for i, v in ipairs(mt.ID) do
-				if id == v then
-					b = true
-					break
-				end
-			end
+			local b = ID_table[id]
 
-			if result == nil and b then
+			if result == nil and b == true then
 				error("(>_<)/no attribute [" .. k .. "] in " .. tolua.type(t) .. "[" .. cname .. "]", 2)
 			end
 
@@ -215,12 +231,10 @@ function lly.finalizeInstance(ins)
 				--lly.log("new attribute " .. k) 
 			end 
 
-			local __nwidxTmp = mt_table[tolua.type(t)].__newindex
-
-			if type(__nwidxTmp) == "function" then
-				__nwidxTmp(t, k, v)
+			if type(mtnewindex) == "function" then
+				mtnewindex(t, k, v)
 			else
-				__nwidxTmp[k] = v
+				mtnewindex[k] = v
 			end
 
 		end	
@@ -285,7 +299,8 @@ function lly.class(classname, super)
 	--如果从userdata，或继承于userdata的table中继承c的类
 	if superType == "function" or (super and super.__ctype == 1) then
 		-- inherited from native C++ Object
-		cls = {}
+		--分配一个10个元素的表
+		cls = {true, true, true, true, true, true, true, true, true, true}
 
 		if superType == "table" then
 			-- copy fields from super
@@ -294,6 +309,7 @@ function lly.class(classname, super)
 			cls.super = super
 		else
 			cls.__create = super
+			cls.super = false
 		end
 
 		cls.ctor = function() error("need implement", 2) end--必须重载
@@ -319,6 +335,7 @@ function lly.class(classname, super)
 			cls.super = super
 		else
 			cls = {ctor = function() error("need ctor", 2) end}--必须重载
+			cls.super = false
 		end
 
 		cls.__cname = classname
@@ -343,16 +360,20 @@ function lly.class(classname, super)
 	--工厂函数，创建对象，可以放入一个table进入init
 	function cls:create(t)--返回class的对象
 		local pRet = self.new()
+
+		---[====[
 		lly.finalizeInstance(pRet)--最终化对象
+		--]====]
+
 		pRet:implementFunction()
 		b = pRet:init(t)  
-		if b then
-			return pRet
-		else
+		if not b then
 			lly.log("(O_O)/init false")
 			pRet = nil
 			return nil
 		end
+
+		return pRet
 	end
 
 	return cls
@@ -362,13 +383,18 @@ end
 --在函数的ctor方法要返回 一个结构体
 --创建好以后，用create生成的对象，不能再往里面添加内容
 function lly.struct(create_table_func)
+	---[====[
 	if type(create_table_func) ~= "function" then 
 		error("create struct need a func param", 2)
 	end
+	--]====]
 
 	local stru = {}
 	stru.table_ctor = create_table_func
+
+	---[====[
 	stru.__ID = getUniqueStructID()
+	--]====]
 
 	--工厂函数，创建对象
 	function stru:create()--返回struct的对象
@@ -390,6 +416,12 @@ end
 
 --创建一个确定项目的数组，参数为取得数组的指针和数组的项目数
 function lly.array(number)
+	---[====[
+	if type(number) ~= "number" then 
+		error("create array need a number param", 2)
+	end
+	--]====]
+
 	local ar = {}
 
 	---[====[
@@ -420,6 +452,7 @@ function lly.const(table)
 end
 
 
+
 --确保对象属于某个类型，不属于则报错
 --基础类型和原始c类型的typename为文字
 --自定义类型和自定义结构体的typename为table
@@ -442,10 +475,20 @@ function lly.ensure(value, typename)
 			if typename.__ctype == nil or typename.class ~= nil then --class是类
 				error("(>_<)/ensure wrong: value must be a class", 2)
 			end
-			
-			if value.__cname ~= typename.__cname or
-				value.__ctype ~= typename.__ctype then
+
+			if value.__ctype ~= typename.__ctype then
 				error("(>_<)/ensure wrong: value must belong to this class", 2)
+			end
+
+			local cname = value.__cname
+			while true do --看是否自己是或者父类是
+				if cname ~= typename.__cname then
+					if value.super ~= false then --检测是否还有父类
+						cname = value.super.__cname
+					else
+						error("(>_<)/ensure wrong: value must belong to this class", 2)						
+					end
+				else break end
 			end
 
 		elseif value.__ctype == 3 then
