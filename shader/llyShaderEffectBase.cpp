@@ -73,26 +73,24 @@ void lly::ShaderEffectBase::setTargetWithChild( cocos2d::Node* node )
 	
 }
 
-void lly::ShaderEffectBase::clearTarget()
+void lly::ShaderEffectBase::restoreTarget(cocos2d::GLProgramState* glProgramState /*= nullptr*/)
 {
 	if (m_eTargetType == ETargetType::NONE_TARGET) return;
 
-	auto glprogram = GLProgram::createWithByteArrays(LLY_SHADER_VERT_DEFAULT, LLY_SHADER_FRAG_DEFAULT);
+	if (glProgramState == nullptr)
+	{
+		auto glprogram = GLProgram::createWithByteArrays(LLY_SHADER_VERT_DEFAULT, LLY_SHADER_FRAG_DEFAULT);
 
-#if (CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-	_vertSource = vertSource;
-	_fragSource = fragSource;
-#endif
-
-	auto glprogramstateDefault = GLProgramState::getOrCreateWithGLProgram(glprogram);
+		glProgramState = GLProgramState::getOrCreateWithGLProgram(glprogram);
+	}
 
 	if (m_eTargetType == ETargetType::SPRITE)
 	{
-		m_target->setGLProgramState(glprogramstateDefault);
+		m_target->setGLProgramState(glProgramState);
 	}
 	else if (m_eTargetType == ETargetType::NODE_WITH_CHILD)
 	{
-		setShaderDefaultWithChild_IfIsSprite(m_target, glprogramstateDefault);
+		setShaderDefaultWithChild_IfIsSprite(m_target, glProgramState);
 	}
 
 	m_target = nullptr;

@@ -35,7 +35,7 @@ public:
 	virtual ~ShaderEffectBase();
 
 	//新建shader效果，vert可以为""，表示使用默认的vert shader
-	static ShaderEffectBase* ShaderEffectBase::createWithShaderFileName(const std::string &vert, const std::string &frag);
+	static ShaderEffectBase* createWithShaderFileName(const std::string &vert, const std::string &frag);
 
 	//将精灵的渲染管线改为本渲染效果
 	virtual void setTarget(cocos2d::Sprite* sprite);
@@ -43,8 +43,8 @@ public:
 	//将节点以及节点所有的精灵的渲染管线改为本渲染效果
 	virtual void setTargetWithChild(cocos2d::Node* node);
 
-	//还原目标，将精灵（或者节点所有的精灵）的渲染管线变为默认值
-	void clearTarget();
+	//还原目标，将精灵（或者节点所有的精灵）的渲染管线变为原值或者默认值
+	void restoreTarget(cocos2d::GLProgramState* glProgramState = nullptr);
 
 protected:
 	virtual bool init(const std::string &vert, const std::string &frag);

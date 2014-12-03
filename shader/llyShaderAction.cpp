@@ -44,7 +44,8 @@ void lly::ShaderAction::update( float time )
 void lly::ShaderAction::stop()
 {
 	cocos2d::Node* node = getTarget();
-	if(node) node->setGLProgramState(oldGLProgramState);
+	
+	if(node) m_effect->restoreTarget(oldGLProgramState);
 
 	ActionInterval::stop();
 }

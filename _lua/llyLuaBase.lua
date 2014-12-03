@@ -22,6 +22,9 @@ local lly = {
 	ensure = true,
 }
 
+--代表空值，但是不释放对象
+_NULL = true
+
 --用于main函数，进行错误输出，用法如下
 --local status, msg = xpcall(main, lly.traceback)
 --if not status then error(msg) end
@@ -159,16 +162,6 @@ end
 
 
 
-
---【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
----[====[
-local structID = 0 
-local function getUniqueStructID()
-	structID = structID + 1
-	return structID
-end
---]====]
-
 ---
 --使类的实例最终化，也就是这之后不能再添加新的属性，避免因写错名称但无法检测而造成的麻烦
 --适用于
@@ -220,7 +213,8 @@ function lly.finalizeInstance(ins)
 			local b = ID_table[id]
 
 			if result == nil and b == true then
-				error("(>_<)/no attribute [" .. k .. "] in " .. tolua.type(t) .. "[" .. cname .. "]", 2)
+				error("(>_<)/no attribute [" .. k .. "] in " .. 
+					mtindex(t, "__cname") .. "[" .. tolua.type(t) .. "]", 2)
 			end
 
 			return result
@@ -286,6 +280,15 @@ local function clone(object)
 	return _copy(object)
 end
 
+--【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
+---[====[
+local IDIndex = 0 
+local function getUniqueID()
+	IDIndex = IDIndex + 1
+	return IDIndex
+end
+--]====]
+
 --Create an class. super可以是一个function或者一个自定义的class
 function lly.class(classname, super)
 	local superType = type(super)
@@ -299,32 +302,42 @@ function lly.class(classname, super)
 	--如果从userdata，或继承于userdata的table中继承c的类
 	if superType == "function" or (super and super.__ctype == 1) then
 		-- inherited from native C++ Object
-		--分配一个10个元素的表
-		cls = {true, true, true, true, true, true, true, true, true, true}
+		--生成一个8个元素的表，直接分配避免多次rehash
+		cls = {true, true, true, true, true, true, true, true}
 
 		if superType == "table" then
-			-- copy fields from super
-			--for k,v in pairs(super) do cls[k] = v end
 			cls.__create = super.__create
 			cls.super = super
+
+			--将父类作为本类的元表，因为父类的__index也为本身，所以当本类没有时，也会从父类找
+			setmetatable(cls, super)
 		else
 			cls.__create = super
-			cls.super = false
+			cls.super = false --没有父类，不用nil是因为finalize中所有nil的属性不能通过
 		end
 
-		cls.ctor = function() error("need implement", 2) end--必须重载
+		cls.ctor = function() error("need implement", 2) end--必须重载，返回一个表格里面放置类的变量
 		cls.__cname = classname
 		cls.__ctype = 1
+		cls.__index = cls --可让类作为元表
 
 		function cls.new()
 			local instance = cls.__create()
-			-- copy fields from class to native object
-			for k,v in pairs(cls) do instance[k] = v end
-			instance.class = cls
+			local insTable = cls:ctor()
+
 			---[====[
-			instance.__ID = getUniqueStructID()
+			if type(insTable) ~= "table" then error("ctor must return table", 2) end
+			insTable.__ID = getUniqueID()
 			--]====]
-			instance:ctor()
+
+			insTable.__class = cls
+
+			--让类作为实例的元表，就可以使用类中保留的方法
+			setmetatable(insTable, cls) 
+
+			--把产生的userdata实例的同位表设置成ctor产生的表，可用里面所有属性
+			tolua.setpeer(instance, insTable)
+
 			return instance
 		end
 
@@ -343,17 +356,14 @@ function lly.class(classname, super)
 		cls.__index = cls
 
 		function cls.new()
-			local instance = setmetatable({}, cls)
-			instance.class = cls
-			instance:ctor()
+			local instance = setmetatable(cls:ctor(), cls)
+			instance.__class = cls
+
 			return instance
 		end
 	end
 	
 	--自添加
-	--实现ctor中的函数
-	function cls:implementFunction() error("need implement func", 2) end
-
 	--初始化 --返回是否初始化成功
 	function cls:init(t) error("need init", 2) end
 
@@ -365,7 +375,6 @@ function lly.class(classname, super)
 		lly.finalizeInstance(pRet)--最终化对象
 		--]====]
 
-		pRet:implementFunction()
 		b = pRet:init(t)  
 		if not b then
 			lly.log("(O_O)/init false")
@@ -378,6 +387,8 @@ function lly.class(classname, super)
 
 	return cls
 end
+
+
 
 --创建一个结构体，基本为 一个简化的创建类的方法
 --在函数的ctor方法要返回 一个结构体
@@ -393,7 +404,7 @@ function lly.struct(create_table_func)
 	stru.table_ctor = create_table_func
 
 	---[====[
-	stru.__ID = getUniqueStructID()
+	stru.__ID = getUniqueID()
 	--]====]
 
 	--工厂函数，创建对象
@@ -438,6 +449,9 @@ end
 --只读的table
 function lly.const(table)
 	---[====[
+	if type(number) ~= "table" then 
+		error("create const need a table param", 2)
+	end
 	local oldtable = table --交换是为了能在注释以外直接返回table
 	table = {}
 	local mt = {
