@@ -23,7 +23,7 @@ local lly = {
 }
 
 --代表空值，但是不释放对象
-_NULL = true
+Lnull = true
 
 --用于main函数，进行错误输出，用法如下
 --local status, msg = xpcall(main, lly.traceback)
@@ -324,9 +324,21 @@ function lly.class(classname, super)
 		function cls.new()
 			local instance = cls.__create()
 			local insTable = cls:ctor()
+			if type(insTable) ~= "table" then error("ctor must return table", 2) end
+
+			local superTable
+			local super = cls.super
+			if super then
+				superTable = super.ctor(cls)
+				if type(superTable) ~= "table" then error("ctor must return table", 2) end
+				for k, v in pairs(insTable) do
+					superTable[k] = v
+				end
+				insTable = superTable
+				super = super.super
+			end
 
 			---[====[
-			if type(insTable) ~= "table" then error("ctor must return table", 2) end
 			insTable.__ID = getUniqueID()
 			--]====]
 
@@ -375,7 +387,7 @@ function lly.class(classname, super)
 		lly.finalizeInstance(pRet)--最终化对象
 		--]====]
 
-		b = pRet:init(t)  
+		local b = pRet:init(t)  
 		if not b then
 			lly.log("(O_O)/init false")
 			pRet = nil
