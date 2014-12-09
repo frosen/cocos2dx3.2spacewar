@@ -23,7 +23,7 @@ local lly = {
 }
 
 --代表空值，但是不释放对象
-Lnull = true
+Lnull = false
 
 --用于main函数，进行错误输出，用法如下
 --local status, msg = xpcall(main, lly.traceback)
@@ -57,8 +57,7 @@ end
 function lly.logCurLocAnd(...)
 	---[====[
 	local info = debug.getinfo(2,"Sln")
-	local strInfo = "(^_^)/: " .. string.format(...) .. " @ LINE " .. info.currentline .. " IN " .. 
-		(info.name and ("FUCN: " .. info.name .. " << ") or "FUCN: unnamed << ") .. info.short_src
+	local strInfo = "(^_^)/" .. string.format(...) .. " @" .. info.currentline .. info.short_src
 
 	lly.log(strInfo)
 	--]====]
@@ -82,7 +81,7 @@ end
 function lly.logTable(t, index)
 	---[====[
 	if index == nil then
-		print("TABLE:")
+		lly.log("TABLE:")
 	end
 
 	local space = "    "
@@ -98,9 +97,9 @@ function lly.logTable(t, index)
 
 	for k,v in pairs(t) do
 		if type(v) ~= "table" then
-			print(_space .. string.format(k) .. "  " .. v)
+			lly.log(_space .. string.format(k) .. "  " .. v)
 		else
-			print(_space .. "T[".. string.format(k) .. "]------------------")
+			lly.log(_space .. "T[".. string.format(k) .. "]------------------")
 			lly.logTable(v, index)
 		end
 	end
@@ -123,11 +122,11 @@ function lly.finalizeGlobalEnvironment()
 	local mt = {}	
 	
 	mt.__index = function (t, k)
-		error("(>_<)/undeclared global var : " .. k, 2)
+		lly.error("undeclared global var : " .. k, 2)
 	end
 
 	mt.__newindex = function (t, k, v)
-		error("(>_<)/undeclared global var : " .. k, 2)
+		lly.error("undeclared global var : " .. k, 2)
 	end
 
 	setmetatable(_G, mt)
@@ -143,14 +142,14 @@ function lly.finalizeCurrentEnvironment()
 		local globalValue = _G[k]
 		
 		if globalValue == nil then
-			error("(>_<)/undeclared global var : " .. k, 2)
+			lly.error("undeclared global var : " .. k, 2)
 		else
 			return globalValue
 		end
 	end
 
 	mt.__newindex = function (t, k, v)
-		error("(>_<)/undeclared global var : " .. k, 2)
+		lly.error("undeclared global var : " .. k, 2)
 	end
 	
 	local newgt = {}
@@ -187,7 +186,7 @@ function lly.finalizeInstance(ins)
 
 	if mt ~= nil and type(ins) == "userdata" then --有元表
 
-		if type(ins.__ID) ~= "number" then error("no __ID") end --么有ID就不是自定义的类，不能final
+		if type(ins.__ID) ~= "number" then lly.error("no __ID") end --么有ID就不是自定义的类，不能final
 
 		ID_table[ins.__ID] = true --保存ID
 
@@ -213,7 +212,7 @@ function lly.finalizeInstance(ins)
 			local b = ID_table[id]
 
 			if result == nil and b == true then
-				error("(>_<)/no attribute [" .. k .. "] in " .. 
+				lly.error("no attribute [" .. k .. "] in " .. 
 					mtindex(t, "__cname") .. "[" .. tolua.type(t) .. "]", 2)
 			end
 
@@ -237,11 +236,11 @@ function lly.finalizeInstance(ins)
 		mt = {}	
 		
 		mt.__index = function (t, k)
-			error("(>_<)/no this attribute " .. k, 2)
+			lly.error("no this attribute " .. k, 2)
 		end
 
 		mt.__newindex = function (t, k, v)
-			error("(>_<)/no this attribute " .. k, 2)
+			lly.error("no this attribute " .. k, 2)
 		end
 
 		setmetatable(ins, mt)			
@@ -316,7 +315,7 @@ function lly.class(classname, super)
 			cls.super = false --没有父类，不用nil是因为finalize中所有nil的属性不能通过
 		end
 
-		cls.ctor = function() error("need implement", 2) end--必须重载，返回一个表格里面放置类的变量
+		cls.ctor = function() lly.error("need implement", 2) end--必须重载，返回一个表格里面放置类的变量
 		cls.__cname = classname
 		cls.__ctype = 1
 		cls.__index = cls --可让类作为元表
@@ -324,13 +323,13 @@ function lly.class(classname, super)
 		function cls.new()
 			local instance = cls.__create()
 			local insTable = cls:ctor()
-			if type(insTable) ~= "table" then error("ctor must return table", 2) end
+			if type(insTable) ~= "table" then lly.error("ctor must return table", 2) end
 
 			local superTable
 			local super = cls.super
 			if super then
 				superTable = super.ctor(cls)
-				if type(superTable) ~= "table" then error("ctor must return table", 2) end
+				if type(superTable) ~= "table" then lly.error("ctor must return table", 2) end
 				for k, v in pairs(insTable) do
 					superTable[k] = v
 				end
@@ -359,7 +358,7 @@ function lly.class(classname, super)
 			cls = clone(super)
 			cls.super = super
 		else
-			cls = {ctor = function() error("need ctor", 2) end}--必须重载
+			cls = {ctor = function() lly.error("need ctor", 2) end}--必须重载
 			cls.super = false
 		end
 
@@ -377,7 +376,7 @@ function lly.class(classname, super)
 	
 	--自添加
 	--初始化 --返回是否初始化成功
-	function cls:init(t) error("need init", 2) end
+	function cls:init(t) lly.error("need init", 2) end
 
 	--工厂函数，创建对象，可以放入一个table进入init
 	function cls:create(t)--返回class的对象
@@ -408,7 +407,7 @@ end
 function lly.struct(create_table_func)
 	---[====[
 	if type(create_table_func) ~= "function" then 
-		error("create struct need a func param", 2)
+		lly.error("create struct need a func param", 2)
 	end
 	--]====]
 
@@ -441,7 +440,7 @@ end
 function lly.array(number)
 	---[====[
 	if type(number) ~= "number" then 
-		error("create array need a number param", 2)
+		lly.error("create array need a number param", 2)
 	end
 	--]====]
 
@@ -462,14 +461,14 @@ end
 function lly.const(table)
 	---[====[
 	if type(number) ~= "table" then 
-		error("create const need a table param", 2)
+		lly.error("create const need a table param", 2)
 	end
 	local oldtable = table --交换是为了能在注释以外直接返回table
 	table = {}
 	local mt = {
 		__index = oldtable,
 		__newindex = function (t, k, v)
-			error("it is a const table")
+			lly.error("it is a const table")
 		end
 	}
 	setmetatable(table, mt)
@@ -488,22 +487,22 @@ function lly.ensure(value, typename)
 
 	if type(typename) == "string" then 
 		if type(value) ~= typename and tolua.type(value) ~= typename then
-			error("(>_<)/ensure wrong: value is a " .. type(value) .. 
+			lly.error("ensure wrong: value is a " .. type(value) .. 
 				", but it must be a " .. typename, 2)
 		end
 
 	elseif type(typename) == "table" then
 		if value.__ctype == 1 or value.__ctype == 2 then --ctype == 1 or 2则为class，3是struct
 			if value.class == nil then --instance是对象
-				error("(>_<)/ensure wrong: value must be a instance", 2)
+				lly.error("ensure wrong: value must be a instance", 2)
 			end
 
 			if typename.__ctype == nil or typename.class ~= nil then --class是类
-				error("(>_<)/ensure wrong: value must be a class", 2)
+				lly.error("ensure wrong: value must be a class", 2)
 			end
 
 			if value.__ctype ~= typename.__ctype then
-				error("(>_<)/ensure wrong: value must belong to this class", 2)
+				lly.error("ensure wrong: value must belong to this class", 2)
 			end
 
 			local cname = value.__cname
@@ -512,20 +511,20 @@ function lly.ensure(value, typename)
 					if value.super ~= false then --检测是否还有父类
 						cname = value.super.__cname
 					else
-						error("(>_<)/ensure wrong: value must belong to this class", 2)						
+						lly.error("ensure wrong: value must belong to this class", 2)						
 					end
 				else break end
 			end
 
 		elseif value.__ctype == 3 then
 			if value.__structID ~= typename.__ID then
-				error("(>_<)/ensure wrong: value must belong to this struct", 2)
+				lly.error("ensure wrong: value must belong to this struct", 2)
 			end
 		else
-			error("(>_<)/ensure wrong: value is illegal", 2)
+			lly.error("ensure wrong: value is illegal", 2)
 		end
 	else
-		error("(>_<)/ensure wrong: typename must be a string/table", 2)
+		lly.error("ensure wrong: typename must be a string/table", 2)
 	end
 	--]====]
 end
