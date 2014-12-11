@@ -19,7 +19,7 @@ local lly = {
 	struct = true,
 	array = true,
 	const = true,
-	ensure = true,
+	ensure = true
 }
 
 --代表空值，但是不释放对象
@@ -388,11 +388,12 @@ function lly.class(classname, super)
 
 		local b = pRet:init(t)  
 		if not b then
-			lly.log("(O_O)/init false")
+			lly.log("(O_O)/%s fail", pRet.__class.__cname)
 			pRet = nil
 			return nil
 		end
 
+		lly.log("(^_^)/%s init", pRet.__class.__cname)
 		return pRet
 	end
 
@@ -528,7 +529,6 @@ function lly.ensure(value, typename)
 	end
 	--]====]
 end
-
 
 
 return lly
