@@ -16,7 +16,7 @@
 using namespace std;
 using namespace lly;
 
-bool lly::FileUtils::searchFolder( const char* DirPath, std::map<std::string, bool> &mapstrb )
+bool lly::FileUtils::searchFolder( const char* DirPath, std::map<std::string, bool> &mapstrb, const char* extension/* = nullptr*/ )
 {
 #ifdef WIN32
 	_finddata_t FileInfo;
@@ -31,19 +31,30 @@ bool lly::FileUtils::searchFolder( const char* DirPath, std::map<std::string, bo
 
 	do
 	{
-		childPath = newPath + FileInfo.name;
+		if (!extension) //如果不需要匹配扩展名
+		{
+			childPath = newPath + FileInfo.name;
 
-		//判断是否有子目录
-		if (FileInfo.attrib & _A_SUBDIR)    
-		{
-			childPath += '/';
-			mapstrb.insert(pair<string, bool>(childPath, true));
+			//判断是否有子目录
+			if (FileInfo.attrib & _A_SUBDIR)    
+			{
+				childPath += '/';
+				mapstrb.insert(pair<string, bool>(childPath, true));
+			}
+			else  
+			{
+				mapstrb.insert(pair<string, bool>(childPath, false));
+			}
 		}
-		else  
+		else //有扩展名的不能是目录
 		{
+			const char* curEx = getLastCharacters(FileInfo.name);
+
+			if (!curEx || strcmp(curEx, extension) != 0) continue; //扩展名不一致时，不加入列表
+			
+			childPath = newPath + FileInfo.name;
 			mapstrb.insert(pair<string, bool>(childPath, false));
 		}
-
 	} while (_findnext(Handle, &FileInfo) == 0);
 
 	_findclose(Handle);
@@ -62,19 +73,31 @@ bool lly::FileUtils::searchFolder( const char* DirPath, std::map<std::string, bo
 
 	while((entry = readdir(dp)) != nullptr) 
 	{
-		newPath = basePath;
-		newPath += entry->d_name;
+		if (!extension) //如果不需要匹配扩展名
+		{
+			newPath = basePath;
+			newPath += entry->d_name;
 
-		lstat(entry->d_name, &statbuf);
-		if(S_ISDIR(statbuf.st_mode)) //判断是否是文件夹
-		{
-			newPath += "/";
-			mapstrb.insert(pair<string, bool>(newPath, true));
-		} 
-		else 
-		{
-			mapstrb.insert(pair<string, bool>(newPath, false));
+			lstat(entry->d_name, &statbuf);
+			if(S_ISDIR(statbuf.st_mode)) //判断是否是文件夹
+			{
+				newPath += "/";
+				mapstrb.insert(pair<string, bool>(newPath, true));
+			} 
+			else 
+			{
+				mapstrb.insert(pair<string, bool>(newPath, false));
+			}
 		}
+		else //有扩展名的不能是目录
+		{
+			const char* curEx = getLastCharacters(FileInfo.name);
+			if (!curEx || strcmp(curEx, extension) != 0) continue; //扩展名不一致时，不加入列表
+			
+			newPath = basePath;
+			newPath += entry->d_name;
+			mapstrb.insert(pair<string, bool>(newPath, false));
+		}	
 	}
 
 	chdir("..");

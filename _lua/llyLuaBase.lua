@@ -97,9 +97,9 @@ function lly.logTable(t, index)
 
 	for k,v in pairs(t) do
 		if type(v) ~= "table" then
-			lly.log(_space .. string.format(k) .. "  " .. v)
+			lly.log(_space .. tostring(k) .. "  " .. tostring(v)
 		else
-			lly.log(_space .. "T[".. string.format(k) .. "]------------------")
+			lly.log(_space .. "T[".. tostring(k) .. "]------------------")
 			lly.logTable(v, index)
 		end
 	end
@@ -301,8 +301,17 @@ function lly.class(classname, super)
 	--如果从userdata，或继承于userdata的table中继承c的类
 	if superType == "function" or (super and super.__ctype == 1) then
 		-- inherited from native C++ Object
-		--生成一个8个元素的表，直接分配避免多次rehash
-		cls = {true, true, true, true, true, true, true, true}
+		--生成一个表，直接分配避免多次rehash
+		cls = {
+			__create = true,
+			super = true,
+			ctor = true,
+			__cname = true,
+			__ctype = true,
+			new = true,
+			init = true,
+			create = true
+		}
 
 		if superType == "table" then
 			cls.__create = super.__create
@@ -449,7 +458,7 @@ function lly.array(number)
 
 	---[====[
 	for i = 1, number do
-		ar[i] = 0
+		ar[i] = false
 	end
 
 	lly.finalizeInstance(ar)
@@ -461,7 +470,7 @@ end
 --只读的table
 function lly.const(table)
 	---[====[
-	if type(number) ~= "table" then 
+	if type(table) ~= "table" then 
 		lly.error("create const need a table param", 2)
 	end
 	local oldtable = table --交换是为了能在注释以外直接返回table

@@ -18,10 +18,13 @@ class FileUtils
 {
 public:
 	//===============操作文件夹=====================
-	//获取某路径下所有的文件和文件夹名称
-	//输入一个string文件夹，一个map<string文件名, bool 是否是文件夹>的引用
+	//获取某路径下所有的文件和文件夹名称，或者所有某类文件（扩展名相同）
+	//输入一个string文件夹，一个map<string文件名, bool 是否是文件夹>的引用，和一个扩展名（不包括".", 默认没有）
 	//返回是否成功
-	static bool searchFolder(const char* DirPath, std::map<std::string, bool> &mapstrb);
+	static bool searchFolder(
+		const char* DirPath, 
+		std::map<std::string, bool> &mapstrb,
+		const char* extension = nullptr);
 
 	//检查一个文件夹是否存在
 	static bool isFolderExist(const char* DirPath);
