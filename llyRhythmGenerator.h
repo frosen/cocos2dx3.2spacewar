@@ -1,15 +1,14 @@
 /*
 名称：llyRhythmGenerator.h
 内容：节奏生成器，继承于node，并将SimpleAudioEngine组合进来，从音乐开始时每隔一个鼓点，运行一个回调函数
-			为了检测时间变化，需要将其加入整个时间循环体系中，也就是addchild到某个节点
 
 制作：卢乐颜
 日期：2014.7.11
 
 */
 
-#ifndef _RHYTHM_GENERATOR_H_
-#define _RHYTHM_GENERATOR_H_
+#ifndef _LLY_RHYTHM_GENERATOR_H_
+#define _LLY_RHYTHM_GENERATOR_H_
 
 #include "cocos2d.h"
 #include "audio\include\SimpleAudioEngine.h"
@@ -75,6 +74,6 @@ protected:
 
 } //lly
 
-#endif //_RHYTHM_GENERATOR_H_
+#endif //_LLY_RHYTHM_GENERATOR_H_
 
 

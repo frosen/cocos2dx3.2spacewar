@@ -197,7 +197,7 @@ protected:
 protected:
     cocos2d::ui::Widget* _model;
     
-    cocos2d::Vector<cocos2d::Node*> _items;
+    cocos2d::Vector<cocos2d::Node*> _items; //ÐÞ¸Ä
     
     Gravity _gravity;
     

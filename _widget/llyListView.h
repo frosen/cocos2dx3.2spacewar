@@ -321,8 +321,8 @@ protected:
 	float getDistance(cocos2d::ui::Widget* item) 
 	{ 
 		return _itemsMargin + (
-			_direction == llyO_for_lly_scrollview::ScrollView::Direction::VERTICAL ? item->getContentSize().height : 
-			_direction == llyO_for_lly_scrollview::ScrollView::Direction::VERTICAL ? item->getContentSize().width : 0); 
+			_direction == cocos2d::ui::ScrollView::Direction::VERTICAL ? item->getContentSize().height : 
+			_direction == cocos2d::ui::ScrollView::Direction::VERTICAL ? item->getContentSize().width : 0); 
 	}
 
 	//增删移动子控件时候调用 默认空
