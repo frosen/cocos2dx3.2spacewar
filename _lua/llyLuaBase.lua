@@ -19,7 +19,8 @@ local lly = {
 	struct = true,
 	array = true,
 	const = true,
-	ensure = true
+	set_pure_virtual_function = true,
+	ensure = true,
 }
 
 --代表空值，但是不释放对象
@@ -97,7 +98,7 @@ function lly.logTable(t, index)
 
 	for k,v in pairs(t) do
 		if type(v) ~= "table" then
-			lly.log(_space .. tostring(k) .. "  " .. tostring(v)
+			lly.log(_space .. tostring(k) .. "  " .. tostring(v))
 		else
 			lly.log(_space .. "T[".. tostring(k) .. "]------------------")
 			lly.logTable(v, index)
@@ -170,10 +171,9 @@ end
 --	自定义的有限项目数组
 --最终release时，可把此函数内容注释掉
 
---【私有】保存是否已经修改了本类的index 和newindex 修改了则不用再修改，ID防止ins的__ID
+--【私有】保存是否已经修改了本类的index 和newindex 修改了则不用再修改
 ---[====[
 local isModify_table = {}
-local ID_table = {}
 --]====]
 
 --最终化
@@ -186,9 +186,8 @@ function lly.finalizeInstance(ins)
 
 	if mt ~= nil and type(ins) == "userdata" then --有元表
 
-		if type(ins.__ID) ~= "number" then lly.error("no __ID") end --么有ID就不是自定义的类，不能final
-
-		ID_table[ins.__ID] = true --保存ID
+		--将此对象设置为已经最终化
+		ins.__has_finalize = true
 
 		local strClassName = tolua.type(ins) --对象的类名
 		if isModify_table[strClassName] == true then return end --如果有说明已经修改
@@ -199,17 +198,15 @@ function lly.finalizeInstance(ins)
 		local mtnewindex = mt.__newindex
 
 		mt.__index = function (t, k)
-			local result = nil
-			local id = nil
+			local result
+			local b
 			if type(mtindex) == "function" then
 				result = mtindex(t, k)
-				id = mtindex(t, "__ID")
+				b = mtindex(t, "__has_finalize")
 			else
 				result = mtindex[k]
-				id = mtindex["__ID"]
+				b = mtindex["__has_finalize"]
 			end
-
-			local b = ID_table[id]
 
 			if result == nil and b == true then
 				lly.error("no attribute [" .. k .. "] in " .. 
@@ -279,15 +276,6 @@ local function clone(object)
 	return _copy(object)
 end
 
---【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
----[====[
-local IDIndex = 0 
-local function getUniqueID()
-	IDIndex = IDIndex + 1
-	return IDIndex
-end
---]====]
-
 --Create an class. super可以是一个function或者一个自定义的class
 function lly.class(classname, super)
 	local superType = type(super)
@@ -346,10 +334,6 @@ function lly.class(classname, super)
 				super = super.super
 			end
 
-			---[====[
-			insTable.__ID = getUniqueID()
-			--]====]
-
 			insTable.__class = cls
 
 			--让类作为实例的元表，就可以使用类中保留的方法
@@ -391,6 +375,18 @@ function lly.class(classname, super)
 	function cls:create(t)--返回class的对象
 		local pRet = self.new()
 
+		--检查是否有没有实现的纯虚函数
+		--遍历纯虚函数列表里面的文本，查看有无同样文本的函数在对象里
+		---[====[
+		if pRet.__pure_virtual_func_tab ~= nil then
+			for i, v in ipairs(pRet.__pure_virtual_func_tab) do
+				if type(pRet[v]) ~= "function" then
+					lly.error(v .. " is pure virtual func, must implement")
+				end
+			end
+		end
+		--]====]
+
 		---[====[
 		lly.finalizeInstance(pRet)--最终化对象
 		--]====]
@@ -410,6 +406,14 @@ function lly.class(classname, super)
 end
 
 
+--【私有函数】给每个结构体提供唯一标识，为每个对象提供唯一标示
+---[====[
+local IDIndex = 0 
+local function getUniqueID()
+	IDIndex = IDIndex + 1
+	return IDIndex
+end
+--]====]
 
 --创建一个结构体，基本为 一个简化的创建类的方法
 --在函数的ctor方法要返回 一个结构体
@@ -484,6 +488,32 @@ function lly.const(table)
 	setmetatable(table, mt)
 	--]====]
 	return table
+end
+
+
+
+--设置纯虚函数
+--输入一个类和其函数的文本名，将这个函数称为此类的纯虚函数
+--纯虚函数必须实现，否则报错
+function lly.set_pure_virtual_function(class, strFunc)
+	---[====[
+	if type(class) ~= "table" or class.__cname == nil then 
+		lly.error("wrong class")
+	end
+
+	if type(strFunc) ~= "string" then 
+		lly.error("wrong strFunc")
+	end
+
+	--生成纯虚函数表
+	if class.__pure_virtual_func_tab == nil then
+		class.__pure_virtual_func_tab = {}
+	end
+
+	local nIndex = #class.__pure_virtual_func_tab + 1
+	class.__pure_virtual_func_tab[nIndex] = strFunc
+
+	--]====]
 end
 
 
