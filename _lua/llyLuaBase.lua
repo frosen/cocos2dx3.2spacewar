@@ -187,7 +187,7 @@ function lly.finalizeInstance(ins)
 	if mt ~= nil and type(ins) == "userdata" then --有元表
 
 		--将此对象设置为已经最终化
-		ins.__has_finalize = true
+		ins.__has_finalized = true
 
 		local strClassName = tolua.type(ins) --对象的类名
 		if isModify_table[strClassName] == true then return end --如果有说明已经修改
@@ -202,10 +202,10 @@ function lly.finalizeInstance(ins)
 			local b
 			if type(mtindex) == "function" then
 				result = mtindex(t, k)
-				b = mtindex(t, "__has_finalize")
+				b = mtindex(t, "__has_finalized")
 			else
 				result = mtindex[k]
-				b = mtindex["__has_finalize"]
+				b = mtindex["__has_finalized"]
 			end
 
 			if result == nil and b == true then
@@ -276,8 +276,9 @@ local function clone(object)
 	return _copy(object)
 end
 
---Create an class. super可以是一个function或者一个自定义的class
-function lly.class(classname, super)
+--Create an class. super可以是一个function或者一个自定义的class(table)
+--interfaceTable是一个接口table，里面必须放置也只能放置纯虚函数
+function lly.class(classname, super, interfaceTable)
 	local superType = type(super)
 	local cls
 
@@ -298,7 +299,7 @@ function lly.class(classname, super)
 			__ctype = true,
 			new = true,
 			init = true,
-			create = true
+			create = true,
 		}
 
 		if superType == "table" then
@@ -315,7 +316,6 @@ function lly.class(classname, super)
 		cls.ctor = function() lly.error("need implement", 2) end--必须重载，返回一个表格里面放置类的变量
 		cls.__cname = classname
 		cls.__ctype = 1
-		cls.__index = cls --可让类作为元表
 
 		function cls.new()
 			local instance = cls.__create()
@@ -357,7 +357,6 @@ function lly.class(classname, super)
 
 		cls.__cname = classname
 		cls.__ctype = 2 -- lua
-		cls.__index = cls
 
 		function cls.new()
 			local instance = setmetatable(cls:ctor(), cls)
@@ -366,6 +365,22 @@ function lly.class(classname, super)
 			return instance
 		end
 	end
+
+	--是否多重继承
+	if interfaceTable then
+		---[====[
+		if type(interfaceTable) ~= "table" then
+			lly.error("interface must be a table")
+		end
+
+		if interfaceTable.__pure_virtual_func_tab == nil then
+			lly.error("interface must have pure virtual function")
+		end
+		--]====]
+		cls.__interface = interfaceTable
+	end
+	
+	cls.__index = cls --可让类作为元表
 	
 	--自添加
 	--初始化 --返回是否初始化成功
@@ -384,6 +399,19 @@ function lly.class(classname, super)
 					lly.error(v .. " is pure virtual func, must implement")
 				end
 			end
+		end
+
+		--检查接口是否实现
+		local su = pRet.__class
+		while su do
+			if type(su) == "function" then break end
+			for i, v in ipairs(su.__interface.__pure_virtual_func_tab) do
+				if type(pRet[v]) ~= "function" then
+					lly.error(v .. " IN interface must implement")
+				end
+			end
+
+			su = su.super
 		end
 		--]====]
 
