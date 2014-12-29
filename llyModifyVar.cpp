@@ -13,7 +13,7 @@ ModifyVar::~ModifyVar()
 
 }
 
-ModifyVar* ModifyVar::create( std::function<void(float)> Modify, float duration, float start,float destination )
+ModifyVar* ModifyVar::create( float duration, float start,float destination, std::function<void(float)> Modify )
 {
 	auto p = new ModifyVar();
 	if (p && p->initWithDuration(Modify, duration, start, destination))
@@ -58,7 +58,7 @@ void ModifyVar::update( float time )
 	{
 		m_fStart += m_fDelta; //每帧变化一个数值
 
-		if ((m_fStart - m_fDestination) * nPlusOrMinus < 0.0f) m_fStart = m_fDestination; //结束时
+		if ((m_fStart - m_fDestination) * nPlusOrMinus <= 0.0f) m_fStart = m_fDestination; //结束时
 			
 		Modify_cb(m_fStart); //回调
 	}

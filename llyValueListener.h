@@ -40,10 +40,9 @@ protected:
 
 	void onDone();
 
-public:
+protected:
 	std::function<void(float)> excute_cb; //执行中的回调
 
-protected:
 	float* m_pfvar; //被监听的数值
 	std::function<float(void)> listen_cb; //被监听的函数
 

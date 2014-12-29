@@ -12,64 +12,63 @@
 
 #if !COCOS2D_DEBUG
 
-#define LLY_LOG(format, ...) do {} while (0)
-#define LLY_LOG_CUR_LOC(_CONTENTS_) do {} while (0)
-#define LLY_RETURN_FALSE_IF_NOT(_CLASS_) if (!_CLASS_) return false
-#define LLY_RETURN_IF_NOT(_CLASS_) if (!_CLASS_) return
-#define LLY_RETURN_FALSE_IF(_CLASS_) if (_CLASS_) return false
-#define LLY_RETURN_IF(_CLASS_) if (_CLASS_) return
+#define llyLog(format, ...) do {} while (0);
+#define llyLog_curLoc(_CONTENTS_) do {} while (0);
+#define llyReturn_false_ifNot(_CLASS_) if (!_CLASS_) return false;
+#define llyReturn_ifNot(_CLASS_) if (!_CLASS_) return;
+#define llyReturn_false_if(_CLASS_) if (_CLASS_) return false;
+#define llyReturn_if(_CLASS_) if (_CLASS_) return;
 
-#define LLY_RETURN_TRUE_FOR_SUCCESS return true
-#define LLY_RETURN_FALSE_FOR_FAIL return false
-#define LLY_RETURN_FOR_FAIL return
+#define llyReturn_true_for_success(...) return true;
+#define llyReturn_false_for_fail(...) return false;
+#define llyReturn_for_fail(...) return;
 
 #else
 
-//自定义log
-#define LLY_LOG(format, ...) cocos2d::log(format, ##__VA_ARGS__)
+#define llyLog(format, ...) cocos2d::log(format, ##__VA_ARGS__)
 
-//log当前位置并输出内容
-#define LLY_LOG_CUR_LOC(_CONTENTS_) \
-	LLY_LOG("%s AT %d, %s, %s", _CONTENT_, __LINE__, __FUNCTION__, __FILE__)
+//log当前位置
+#define llyLog_curLoc(_CONTENTS_) \
+	cocos2d::log("%s AT %d, %s, %s", _CONTENT_, __LINE__, __FUNCTION__, __FILE__);
 
 //=============================================
-//如果出错则返回错误
-#define LLY_RETURN_FALSE_IF_NOT(_CLASS_)\
+//出错返回错误
+#define llyReturn_false_ifNot(_CLASS_)\
 	if(!_CLASS_) { \
-	LLY_LOG_CUR_LOC("@wrong"); \
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 	return false; }
  
-//如果出错则返回
-#define LLY_RETURN_IF_NOT(_CLASS_)\
+//出错返回
+#define llyReturn_ifNot(_CLASS_)\
 	if(!_CLASS_){ \
-	LLY_LOG_CUR_LOC("@wrong"); \
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 	return; } 
 
-//如果怎样则返回错误
-#define LLY_RETURN_FALSE_IF(_CLASS_)\
+//出错返回错误
+#define llyReturn_false_if(_CLASS_)\
 	if(_CLASS_) { \
-	LLY_LOG_CUR_LOC("@wrong"); \
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 	return false; }
 
-//如果怎样则返回
-#define LLY_RETURN_IF(_CLASS_)\
+//出错返回
+#define llyReturn_if(_CLASS_)\
 	if(_CLASS_){ \
-	LLY_LOG_CUR_LOC("@wrong"); \
+	cocos2d::log("@wrong %s AT %d, %s, %s", #_CLASS_, __LINE__, __FUNCTION__, __FILE__); \
 	return; } 
 
 //=====================================================
 //函数正确返回
-#define LLY_RETURN_TRUE_FOR_SUCCESS \
-	LLY_LOG_CUR_LOC("right excute"); \
-	return true
+#define llyReturn_true_for_success \
+	cocos2d::log("right excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	return true; 
 				
-#define LLY_RETURN_FALSE_FOR_FAIL \
-	LLY_LOG_CUR_LOC("@wrong excute"); \
-	return false
+#define llyReturn_false_for_fail \
+	cocos2d::log("@wrong excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	return false;
 
-#define LLY_RETURN_FOR_FAIL \
-	LLY_LOG_CUR_LOC("@wrong excute"); \
-	return
+#define llyReturn_for_fail \
+	cocos2d::log("@wrong excute AT %d, %s, %s", __LINE__, __FUNCTION__, __FILE__); \
+	return;
 
 #endif //
 

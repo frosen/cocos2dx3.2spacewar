@@ -86,7 +86,7 @@ function lly.logTable(t, index)
 	end
 
 	local space = "    "
-	local _space = ""
+	local _space = " "
 	if index ~= nil then
 		for i = 1, index do
 			_space = _space .. space
@@ -96,9 +96,12 @@ function lly.logTable(t, index)
 		index = 1
 	end
 
+	if not t then lly.log(_space .. "table is nil") end
+
 	for k,v in pairs(t) do
 		if type(v) ~= "table" then
-			lly.log(_space .. tostring(k) .. "  " .. tostring(v))
+			lly.log("%s%s[%s]  %s[%s]", 
+				_space, tostring(k), type(k), tostring(v), type(v))
 		else
 			lly.log(_space .. "T[".. tostring(k) .. "]------------------")
 			lly.logTable(v, index)
@@ -257,8 +260,8 @@ end
 --	init 用于初始化，调用create时调用
 --还有一个create作为模板，生成对象用，create可以自行修改或者禁用
 
---【私有函数】克隆，完全复制于extern
-local function clone(object)
+--克隆，完全复制于extern
+function lly.clone(object)
 	local lookup_table = {}
 	local function _copy(object)
 		if type(object) ~= "table" then
@@ -348,7 +351,7 @@ function lly.class(classname, super, interfaceTable)
 	else
 		-- inherited from Lua Object
 		if super then
-			cls = clone(super)
+			cls = lly.clone(super)
 			cls.super = super
 		else
 			cls = {ctor = function() lly.error("need ctor", 2) end}--必须重载
@@ -496,7 +499,7 @@ function lly.array(number, default)
 			end
 		elseif type(default) == "table" then
 			for i = 1, number do
-				ar[i] = clone(default)
+				ar[i] = lly.clone(default)
 			end
 		else
 			for i = 1, number do
@@ -574,22 +577,21 @@ function lly.ensure(value, typename)
 
 	if type(typename) == "string" then 
 		if type(value) ~= typename and tolua.type(value) ~= typename then
-			lly.error("ensure wrong: value is a " .. type(value) .. 
-				", but it must be a " .. typename, 2)
+			lly.error("value is a " .. type(value) .. ", but it must be a " .. typename, 2)
 		end
 
 	elseif type(typename) == "table" then
 		if value.__ctype == 1 or value.__ctype == 2 then --ctype == 1 or 2则为class，3是struct
 			if value.class == nil then --instance是对象
-				lly.error("ensure wrong: value must be a instance", 2)
+				lly.error("value must be a instance", 2)
 			end
 
 			if typename.__ctype == nil or typename.class ~= nil then --class是类
-				lly.error("ensure wrong: value must be a class", 2)
+				lly.error("typename must be a class", 2)
 			end
 
 			if value.__ctype ~= typename.__ctype then
-				lly.error("ensure wrong: value must belong to this class", 2)
+				lly.error("value must belong to this class", 2)
 			end
 
 			local cname = value.__cname
@@ -598,20 +600,20 @@ function lly.ensure(value, typename)
 					if value.super ~= false then --检测是否还有父类
 						cname = value.super.__cname
 					else
-						lly.error("ensure wrong: value must belong to this class", 2)						
+						lly.error("value must belong to this class", 2)						
 					end
 				else break end
 			end
 
 		elseif value.__ctype == 3 then
 			if value.__structID ~= typename.__ID then
-				lly.error("ensure wrong: value must belong to this struct", 2)
+				lly.error("value must belong to this struct", 2)
 			end
 		else
-			lly.error("ensure wrong: value is illegal", 2)
+			lly.error("value is illegal", 2)
 		end
 	else
-		lly.error("ensure wrong: typename must be a string/table", 2)
+		lly.error("typename must be a string/table", 2)
 	end
 	--]====]
 end

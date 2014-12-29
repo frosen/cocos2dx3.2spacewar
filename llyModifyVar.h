@@ -19,13 +19,13 @@ public:
 	virtual ~ModifyVar();
 
 	//通过一个初始量，变化时间，最终数值来修改一个接收改变后数值的回调函数
-	static ModifyVar* create(std::function<void(float)> Modify,  float duration, float start,float destination);
+	static ModifyVar* create(float duration, float start, float destination, std::function<void(float)> Modify);
 
 	//override
 	virtual ModifyVar* clone() const override;
 	virtual ModifyVar* reverse(void) const override;	
 	virtual void startWithTarget(cocos2d::Node *pTarget) override;
-	virtual void update(float time) override;;
+	virtual void update(float time) override;
 
 protected:
 	bool initWithDuration(std::function<void(float)> Modify, float duration, float start, float destination);
