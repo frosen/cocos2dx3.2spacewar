@@ -11,10 +11,10 @@ lly::CheckBoxManager::CheckBoxManager() : Ref(), m_nMaxSelected(1)
 
 lly::CheckBoxManager::~CheckBoxManager()
 {
-
+	
 }
 
-CheckBoxManager* lly::CheckBoxManager::createWithCheckBox( CheckBox* cb, ... )
+CheckBoxManager* lly::CheckBoxManager::createWithCheckBox( lly::CheckBox* cb, ... )
 {
     CheckBoxManager* pRet = new CheckBoxManager();
     if (pRet && cb) //新建无误，且第一个控件不为空
@@ -22,8 +22,7 @@ CheckBoxManager* lly::CheckBoxManager::createWithCheckBox( CheckBox* cb, ... )
 		std::function <void(lly::CheckBox*, bool)> func = 
 			CC_CALLBACK_2(CheckBoxManager::doCBClick_cb, pRet);
 
-        //让第一个控件获知管理器
-		
+        //让第一个控件获知管理器		
 		cb->setCheckBoxManager(pRet, func);
 
         //如果是选择状态就加入列表

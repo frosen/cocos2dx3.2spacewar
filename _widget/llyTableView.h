@@ -33,10 +33,7 @@ typedef void (cocos2d::Ref::*SEL_ListViewEvent)(cocos2d::Ref*,ListViewEventType)
 #define listvieweventselector(_SELECTOR) (SEL_ListViewEvent)(&_SELECTOR)
 
 class ListView : public lly::ScrollView
-{
- 
-    DECLARE_CLASS_GUI_INFO
-    
+{    
 public:
     enum class Gravity
     {
@@ -141,7 +138,7 @@ public:
      * Changes the gravity of listview.
      * @see ListViewGravity
      */
-    virtual void setGravity(Gravity gravity);
+    virtual void setGravity(Gravity gravity); //修改v
     
     /**
      * Changes the margin between each item.
@@ -155,7 +152,7 @@ public:
     virtual void doLayout() override;
     
     virtual void addChild(cocos2d::Node* child)override;
-    virtual void addChild(cocos2d::Node * child, int localZOrder)override;
+    virtual void addChild(cocos2d::Node* child, int localZOrder)override;
     virtual void addChild(cocos2d::Node* child, int zOrder, int tag) override; //修改，不判断widget
     virtual void addChild(cocos2d::Node* child, int zOrder, const std::string &name) override; //修改，不判断widget
     virtual void removeAllChildren() override;
@@ -186,14 +183,14 @@ CC_CONSTRUCTOR_ACCESS:
     virtual bool init() override;
     
 protected:    
-    virtual void updateInnerContainerSize();
-    virtual void remedyLayoutParameter(cocos2d::Node* item);
+    virtual void updateInnerContainerSize();  //修改v
+    virtual void remedyLayoutParameter(cocos2d::Node* item);  //修改v
     virtual void onSizeChanged() override;
     virtual cocos2d::ui::Widget* createCloneInstance() override; //wi still
     virtual void copySpecialProperties(cocos2d::ui::Widget* model) override; //wi still
     virtual void copyClonedWidgetChildren(cocos2d::ui::Widget* model) override; //wi still  修改
     void selectedItemEvent(TouchEventType event);
-    virtual void interceptTouchEvent(cocos2d::ui::Widget::TouchEventType event, cocos2d::ui::Widget* sender, cocos2d::Touch* touch) override; //wi still
+    virtual void interceptTouchEvent(cocos2d::ui::Widget::TouchEventType event, cocos2d::ui::Widget* sender, cocos2d::Touch* touch) override; //wi still   修改和lly::listview同
 protected:
     cocos2d::ui::Widget* _model;
     
@@ -220,6 +217,16 @@ protected:
 #pragma warning (pop)
 #endif
     ccListViewCallback _eventCallback;
+
+public: //自添加
+	//设置最大移动距离，超过距离不响应触控（touch end）
+	void setListMaxMovePoint(const cocos2d::Vec2 &pos) { m_posMaxMove = pos; }
+	bool isMoveList() { return _bMoved; } //移动了列表，用于触摸回调中禁止动作
+
+protected:
+	cocos2d::Vec2 m_posMaxMove; //最大移动距离，大于这个距离不响应触控
+	bool _bMoved; //是否移动了列表
+	cocos2d::Vec2 m_posBegintouch; 
 };
 
 } //llyO_for_lly_tableview

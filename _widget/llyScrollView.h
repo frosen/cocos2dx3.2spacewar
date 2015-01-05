@@ -1,7 +1,9 @@
 /*
 名称：llyScrollView.h
 内容：新的滑动列表控件，
-			原始函数修改一些函数成为虚函数：setInnerContainerSize, jumpToDestination
+
+			!!!!!< 原始函数修改一些函数成为虚函数：setInnerContainerSize, jumpToDestination >!!!!!!
+
 			特性：
             给内层范围超出外层时增加了回调函数，可用于此时显示滑动条，
 			给拖动内层时增加了回调函数，可用于更改滑动条

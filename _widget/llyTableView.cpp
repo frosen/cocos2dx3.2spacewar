@@ -6,9 +6,7 @@ using namespace ui;
 
 namespace llyO_for_lly_tableview {
 
-IMPLEMENT_CLASS_GUI_INFO(ListView)
-
-	ListView::ListView():
+ListView::ListView():
 	_model(nullptr),
 	_gravity(Gravity::CENTER_VERTICAL),
 	_itemsMargin(0.0f),
@@ -16,7 +14,10 @@ IMPLEMENT_CLASS_GUI_INFO(ListView)
 	_listViewEventSelector(nullptr),
 	_curSelectedIndex(0),
 	_refreshViewDirty(true),
-	_eventCallback(nullptr)
+	_eventCallback(nullptr),
+	//自添加
+	m_posMaxMove(Vec2(5, 5)),
+	_bMoved(false)
 {
 	this->setTouchEnabled(true);
 }
@@ -79,7 +80,7 @@ void ListView::pushBackDefaultItem()
 		return;
 	}
 	Widget* newItem = _model->clone();
-	remedyLayoutParameter(newItem);
+	//remedyLayoutParameter(newItem);
 	addChild(newItem);
 	_refreshViewDirty = true;
 }
@@ -95,7 +96,7 @@ void ListView::insertDefaultItem(ssize_t index)
 	_items.insert(index, newItem);
 	ScrollView::addChild(newItem);
 
-	remedyLayoutParameter(newItem);
+	//remedyLayoutParameter(newItem);
 
 	_refreshViewDirty = true;
 }
@@ -103,7 +104,7 @@ void ListView::insertDefaultItem(ssize_t index)
 
 void ListView::pushBackCustomItem(Node* item)
 {
-	remedyLayoutParameter(item);
+	//remedyLayoutParameter(item);
 	addChild(item);
 	_refreshViewDirty = true;
 }
@@ -152,7 +153,7 @@ void ListView::insertCustomItem(Node* item, ssize_t index)
 	_items.insert(index, item);
 	ScrollView::addChild(item);
 
-	remedyLayoutParameter(item);
+	//remedyLayoutParameter(item);
 	_refreshViewDirty = true;
 }
 
@@ -318,21 +319,48 @@ void ListView::selectedItemEvent(TouchEventType event)
 void ListView::interceptTouchEvent(TouchEventType event, Widget *sender, Touch* touch)
 {
 	ScrollView::interceptTouchEvent(event, sender, touch);
-	if (event != TouchEventType::MOVED)
+	switch (event)
 	{
-		Widget* parent = sender;
-		while (parent)
+	case cocos2d::ui::Widget::TouchEventType::MOVED:
 		{
-			if (parent && parent->getParent() == _innerContainer)
+			//若移动的距离大于一个量，则视为移动，而不响应touch结束
+			auto movePoint = touch->getLocation(); 
+			if (_bMoved == false && 
+				(abs(movePoint.x - m_posBegintouch.x) > m_posMaxMove.x || 
+				abs(movePoint.y - m_posBegintouch.y) > m_posMaxMove.y))
+				_bMoved = true;
+		}		
+		break;
+	case cocos2d::ui::Widget::TouchEventType::BEGAN:
+		_bMoved = false;
+		m_posBegintouch = touch->getLocation();
+
+		//没有break
+
+	case cocos2d::ui::Widget::TouchEventType::ENDED:
+
+		if (_bMoved) break;
+
+		//============orig
+		{
+			Widget* parent = sender;
+			while (parent)
 			{
-				_curSelectedIndex = getIndex(parent);
-				break;
+				if (parent && parent->getParent() == _innerContainer)
+				{
+					_curSelectedIndex = getIndex(parent);
+					break;
+				}
+				parent = dynamic_cast<Widget*>(parent->getParent());
 			}
-			parent = dynamic_cast<Widget*>(parent->getParent());
-		}
-		if (sender->isHighlighted()) {
-			selectedItemEvent(event);
-		}
+			if (sender->isHighlighted()) {
+				selectedItemEvent(event);
+			}
+		}	
+		//===============
+		break;
+	default:
+		break;
 	}
 }
 
@@ -349,7 +377,7 @@ void ListView::onSizeChanged()
 
 std::string ListView::getDescription() const
 {
-	return "ListView";
+	return "ListView for table";
 }
 
 Widget* ListView::createCloneInstance()
@@ -594,6 +622,7 @@ void lly::TableView::updateInnerContainerSize()
 							float fORI = item->getPositionY();
 							item->setPositionY(_innerContainer->getContentSize().height - m_fTopMargin);
 							fDistance = item->getPositionY() - fORI;
+							first  = false;
 						}
 						else
 						{
@@ -626,6 +655,7 @@ void lly::TableView::updateInnerContainerSize()
 							float fORI = item->getPositionX();
 							item->setPositionX(_innerContainer->getContentSize().width - m_fTopMargin);
 							fDistance = item->getPositionX() - fORI;
+							first  = false;
 						}
 						else
 						{
@@ -682,6 +712,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 					item->setPosition(Vec2(m_fHorizontalMargin, lastItem->getPositionY() - m_fLineSpacing));
 					m_arHeadNode.pushBack(item); //行头
 				}
+				else
+				{
+					item->setPositionY(lastItem->getPositionY());
+				}
 			}
 			break;
 		case ETableViewGravity::RIGHT_TOP:
@@ -707,6 +741,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 				{
 					item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, lastItem->getPositionY() - m_fLineSpacing));
 					m_arHeadNode.pushBack(item); //行头
+				}
+				else
+				{
+					item->setPositionY(lastItem->getPositionY());
 				}
 			}
 			break;
@@ -735,6 +773,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 					item->setPosition(Vec2(m_fHorizontalMargin, lastItem->getPositionY() + m_fLineSpacing));
 					m_arHeadNode.pushBack(item); //行头
 				}
+				else
+				{
+					item->setPositionY(lastItem->getPositionY());
+				}
 			}
 			break;
 		case ETableViewGravity::RIGHT_BOTTOM:
@@ -760,6 +802,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 				{
 					item->setPosition(Vec2(_innerContainer->getContentSize().width - m_fHorizontalMargin, lastItem->getPositionY() + m_fLineSpacing));
 					m_arHeadNode.pushBack(item); //行头
+				}
+				else
+				{
+					item->setPositionY(lastItem->getPositionY());
 				}
 			}
 			break;
@@ -795,6 +841,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 					item->setPosition(Vec2(lastItem->getPositionX() + m_fLineSpacing, _innerContainer->getContentSize().height - m_fHorizontalMargin));
 					m_arHeadNode.pushBack(item); //行头
 				}
+				else
+				{
+					item->setPositionX(lastItem->getPositionX());
+				}
 			}
 			break;
 		case ETableViewGravity::RIGHT_TOP:
@@ -820,6 +870,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 				{
 					item->setPosition(Vec2(lastItem->getPositionX() - m_fLineSpacing, _innerContainer->getContentSize().height - m_fHorizontalMargin));
 					m_arHeadNode.pushBack(item); //行头
+				}
+				else
+				{
+					item->setPositionX(lastItem->getPositionX());
 				}
 			}
 			break;
@@ -848,6 +902,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 					item->setPosition(Vec2(lastItem->getPositionX() + m_fLineSpacing, m_fHorizontalMargin));
 					m_arHeadNode.pushBack(item); //行头
 				}
+				else
+				{
+					item->setPositionX(lastItem->getPositionX());
+				}
 			}
 			break;
 		case ETableViewGravity::RIGHT_BOTTOM:
@@ -874,6 +932,10 @@ void lly::TableView::remedyLayoutParameter( cocos2d::Node* item )
 				{
 					item->setPosition(Vec2(lastItem->getPositionX() - m_fLineSpacing, m_fHorizontalMargin));
 					m_arHeadNode.pushBack(item); //行头
+				}
+				else
+				{
+					item->setPositionX(lastItem->getPositionX());
 				}
 			}
 			break;

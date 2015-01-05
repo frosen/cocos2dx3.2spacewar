@@ -3,409 +3,12 @@
 #include "extensions/GUI/CCControlExtension/CCScale9Sprite.h"
 
 USING_NS_CC;
-using namespace ui;
 
-namespace llyO_for_lly_listview {
-    
-IMPLEMENT_CLASS_GUI_INFO(ListView)
-
-ListView::ListView():
-_model(nullptr),
-_gravity(Gravity::CENTER_VERTICAL),
-_itemsMargin(0.0f),
-_listViewEventListener(nullptr),
-_listViewEventSelector(nullptr),
-_curSelectedIndex(0),
-_refreshViewDirty(true),
-_eventCallback(nullptr)
-{
-    this->setTouchEnabled(true);
-}
-
-ListView::~ListView()
-{
-    _listViewEventListener = nullptr;
-    _listViewEventSelector = nullptr;
-    _items.clear();
-    CC_SAFE_RELEASE(_model);
-}
-
-ListView* ListView::create()
-{
-    ListView* widget = new ListView();
-    if (widget && widget->init())
-    {
-        widget->autorelease();
-        return widget;
-    }
-    CC_SAFE_DELETE(widget);
-    return nullptr;
-}
-
-bool ListView::init()
-{
-    if (ScrollView::init())
-    {
-        setLayoutType(Type::VERTICAL);
-        return true;
-    }
-    return false;
-}
-
-void ListView::setItemModel(Widget *model)
-{
-    if (!model)
-    {
-        return;
-    }
-    CC_SAFE_RELEASE_NULL(_model);
-    _model = model;
-    CC_SAFE_RETAIN(_model);
-}
-
-void ListView::updateInnerContainerSize()
-{
-	//已经重载于lly::ListView
-}
-
-void ListView::remedyLayoutParameter(Widget *item)
-{
-	//已经重载于lly::ListView
-}
-
-void ListView::pushBackDefaultItem()
-{
-    if (!_model)
-    {
-        return;
-    }
-    Widget* newItem = _model->clone();
-    remedyLayoutParameter(newItem);
-    addChild(newItem);
-    _refreshViewDirty = true;
-}
-
-void ListView::insertDefaultItem(ssize_t index)
-{
-    if (!_model)
-    {
-        return;
-    }
-    Widget* newItem = _model->clone();
-    
-    _items.insert(index, newItem);
-    ScrollView::addChild(newItem);
-
-    remedyLayoutParameter(newItem);
-    
-    _refreshViewDirty = true;
-}
-
-
-void ListView::pushBackCustomItem(Widget* item)
-{
-    remedyLayoutParameter(item);
-    addChild(item);
-    _refreshViewDirty = true;
-}
-    
-void ListView::addChild(cocos2d::Node *child, int zOrder, int tag)
-{
-    ScrollView::addChild(child, zOrder, tag);
-
-    Widget* widget = dynamic_cast<Widget*>(child);
-    if (widget)
-    {
-        _items.pushBack(widget);
-    }
-}
-    
-void ListView::addChild(cocos2d::Node *child)
-{
-    ListView::addChild(child, child->getLocalZOrder(), child->getName());
-}
-
-void ListView::addChild(cocos2d::Node *child, int zOrder)
-{
-    ListView::addChild(child, zOrder, child->getName());
-}
- 
-void ListView::addChild(Node* child, int zOrder, const std::string &name)
-{
-    ScrollView::addChild(child, zOrder, name);
-    
-    Widget* widget = dynamic_cast<Widget*>(child);
-    if (widget)
-    {
-        _items.pushBack(widget);
-    }
-}
-    
-void ListView::removeChild(cocos2d::Node *child, bool cleaup)
-{
-    Widget* widget = dynamic_cast<Widget*>(child);
-    if (widget) {
-        _items.eraseObject(widget);
-    }
-   
-    ScrollView::removeChild(child, cleaup);
-}
-    
-void ListView::removeAllChildren()
-{
-    this->removeAllChildrenWithCleanup(true);
-}
-    
-void ListView::removeAllChildrenWithCleanup(bool cleanup)
-{
-    ScrollView::removeAllChildrenWithCleanup(cleanup);
-    _items.clear();
-}
-
-void ListView::insertCustomItem(Widget* item, ssize_t index)
-{
-    _items.insert(index, item);
-    ScrollView::addChild(item);
-
-    remedyLayoutParameter(item);
-    _refreshViewDirty = true;
-}
-
-void ListView::removeItem(ssize_t index)
-{
-    Widget* item = getItem(index);
-    if (!item)
-    {
-        return;
-    }
-    removeChild(item, true);
-    
-    _refreshViewDirty = true;
-}
-
-void ListView::removeLastItem()
-{
-    removeItem(_items.size() -1);
-}
-    
-void ListView::removeAllItems()
-{
-    removeAllChildren();
-}
-
-Widget* ListView::getItem(ssize_t index)const
-{
-    if (index < 0 || index >= _items.size())
-    {
-        return nullptr;
-    }
-    return _items.at(index);
-}
-
-Vector<Widget*>& ListView::getItems()
-{
-    return _items;
-}
-
-ssize_t ListView::getIndex(Widget *item) const
-{
-    if (!item)
-    {
-        return -1;
-    }
-    return _items.getIndex(item);
-}
-
-void ListView::setGravity(Gravity gravity)
-{
-    if (_gravity == gravity)
-    {
-        return;
-    }
-    _gravity = gravity;
-    _refreshViewDirty = true;
-}
-
-void ListView::setItemsMargin(float margin)
-{
-    if (_itemsMargin == margin)
-    {
-        return;
-    }
-    _itemsMargin = margin;
-    _refreshViewDirty = true;
-}
-    
-float ListView::getItemsMargin()const
-{
-    return _itemsMargin;
-}
-
-void ListView::setDirection(Direction dir)
-{
-    switch (dir)
-    {
-        case Direction::VERTICAL:
-            setLayoutType(Type::VERTICAL);
-            break;
-        case Direction::HORIZONTAL:
-            setLayoutType(Type::HORIZONTAL);
-            break;
-        case Direction::BOTH:
-            return;
-        default:
-            return;
-            break;
-    }
-    ScrollView::setDirection(dir);
-}
-    
-void ListView::requestRefreshView()
-{
-    _refreshViewDirty = true;
-}
-
-void ListView::refreshView()
-{
-    ssize_t length = _items.size();
-    for (int i=0; i<length; i++)
-    {
-        Widget* item = _items.at(i);
-        item->setLocalZOrder(i);
-        remedyLayoutParameter(item);
-    }
-    updateInnerContainerSize();
-}
-    
-void ListView::doLayout()
-{
-    Layout::doLayout();
-    
-    if (_refreshViewDirty)
-    {
-        refreshView();
-        _refreshViewDirty = false;
-    }
-}
-    
-void ListView::addEventListenerListView(Ref *target, SEL_ListViewEvent selector)
-{
-    _listViewEventListener = target;
-    _listViewEventSelector = selector;
-}
-
-    
-void ListView::addEventListener(const ccListViewCallback& callback)
-{
-    _eventCallback = callback;
-}
-    
-void ListView::selectedItemEvent(TouchEventType event)
-{
-    switch (event)
-    {
-        case TouchEventType::BEGAN:
-        {
-            if (_listViewEventListener && _listViewEventSelector)
-            {
-                (_listViewEventListener->*_listViewEventSelector)(this, LISTVIEW_ONSELECTEDITEM_START);
-            }
-            if (_eventCallback) {
-                _eventCallback(this,EventType::ON_SELECTED_ITEM_START);
-            }
-        }
-        break;
-        default:
-        {
-            if (_listViewEventListener && _listViewEventSelector)
-            {
-                (_listViewEventListener->*_listViewEventSelector)(this, LISTVIEW_ONSELECTEDITEM_END);
-            }
-            if (_eventCallback) {
-                _eventCallback(this, EventType::ON_SELECTED_ITEM_END);
-            }
-        }
-        break;
-    }
-
-}
-    
-void ListView::interceptTouchEvent(TouchEventType event, Widget *sender, Touch* touch)
-{
-    ScrollView::interceptTouchEvent(event, sender, touch);
-    if (event != TouchEventType::MOVED)
-    {
-        Widget* parent = sender;
-        while (parent)
-        {
-            if (parent && parent->getParent() == _innerContainer)
-            {
-                _curSelectedIndex = getIndex(parent);
-                break;
-            }
-            parent = dynamic_cast<Widget*>(parent->getParent());
-        }
-        if (sender->isHighlighted()) {
-            selectedItemEvent(event);
-        }
-    }
-}
-    
-ssize_t ListView::getCurSelectedIndex() const
-{
-    return _curSelectedIndex;
-}
-
-void ListView::onSizeChanged()
-{
-    ScrollView::onSizeChanged();
-    _refreshViewDirty = true;
-}
-
-std::string ListView::getDescription() const
-{
-    return "ListView";
-}
-
-Widget* ListView::createCloneInstance()
-{
-    return ListView::create();
-}
-
-void ListView::copyClonedWidgetChildren(Widget* model)
-{
-    auto& arrayItems = static_cast<ListView*>(model)->getItems();
-    for (auto& item : arrayItems)
-    {
-        pushBackCustomItem(item->clone());
-    }
-}
-
-void ListView::copySpecialProperties(Widget *widget)
-{
-    ListView* listViewEx = dynamic_cast<ListView*>(widget);
-    if (listViewEx)
-    {
-        ScrollView::copySpecialProperties(widget);
-        setItemModel(listViewEx->_model);
-        setItemsMargin(listViewEx->_itemsMargin);
-        setGravity(listViewEx->_gravity);
-        _listViewEventListener = listViewEx->_listViewEventListener;
-        _listViewEventSelector = listViewEx->_listViewEventSelector;
-        _eventCallback = listViewEx->_eventCallback;
-    }
-}
-
-} //llyO
-
-
-
-//================================
 using namespace lly;
 
 IMPLEMENT_CLASS_GUI_INFO(lly::ListView)
 
-lly::ListView::ListView() : llyO_for_lly_listview::ListView(), 
+lly::ListView::ListView() : cocos2d::ui::ListView(), 
 	//自添加 ============
 	m_bAnimation(false),
 	m_fWidgetMoveSpeed(1),
@@ -425,7 +28,7 @@ lly::ListView::~ListView()
 
 }
 
-ListView* lly::ListView::create()
+lly::ListView* lly::ListView::create()
 {
 	auto wi = new lly::ListView();
 	if (wi && wi->init())
@@ -443,7 +46,7 @@ ListView* lly::ListView::create()
 
 void lly::ListView::pushBackDefaultItem()
 {
-	llyO_for_lly_listview::ListView::pushBackDefaultItem();
+	ui::ListView::pushBackDefaultItem();
 	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
@@ -476,14 +79,14 @@ void lly::ListView::insertDefaultItem(ssize_t index)
 	}
 	//===========================
 
-	llyO_for_lly_listview::ListView::insertDefaultItem(index);
+	ui::ListView::insertDefaultItem(index);
 
 	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
 void lly::ListView::pushBackCustomItem(Widget* item)
 {
-	llyO_for_lly_listview::ListView::pushBackCustomItem(item);
+	ui::ListView::pushBackCustomItem(item);
 	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
 
@@ -514,7 +117,7 @@ void lly::ListView::insertCustomItem(Widget* item, ssize_t index)
 	}
 	//===========================
 
-	llyO_for_lly_listview::ListView::insertCustomItem(item, index);
+	ui::ListView::insertCustomItem(item, index);
 
 	changeWidgetEvent(changeItemType::ADD_ITEM); //增删改控件时候的回调
 }
@@ -544,7 +147,7 @@ void ListView::removeItem(ssize_t index)
 	}
 	//===========================
 
-	llyO_for_lly_listview::ListView::removeItem(index);
+	ui::ListView::removeItem(index);
 
 	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
@@ -552,14 +155,14 @@ void ListView::removeItem(ssize_t index)
 void ListView::removeLastItem()
 {
 	if (m_targetItem == getLastItem()) m_targetItem = nullptr; //取消目标控件
-	llyO_for_lly_listview::ListView::removeLastItem();
+	ui::ListView::removeLastItem();
 	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
 
 void ListView::removeAllItems()
 {
 	if (m_targetItem) m_targetItem = nullptr; //取消目标控件
-	llyO_for_lly_listview::ListView::removeAllItems();
+	ui::ListView::removeAllItems();
 	changeWidgetEvent(changeItemType::REMOVE_ITEM); //增删改控件时候的回调
 }
 
@@ -930,7 +533,7 @@ void lly::ListView::copySpecialProperties(Widget *widget)
 	lly::ListView* listViewEx = dynamic_cast<lly::ListView*>(widget);
 	if (listViewEx)
 	{
-		llyO_for_lly_listview::ListView::copySpecialProperties(listViewEx);
+		ui::ListView::copySpecialProperties(listViewEx);
 		
 		m_bAnimation = listViewEx->m_bAnimation; //是否开启动画（默认不开启）
 		m_fWidgetMoveSpeed = listViewEx->m_fWidgetMoveSpeed; //控件动画移动的速度（默认每帧1像素）
@@ -970,9 +573,6 @@ void lly::ListView::interceptTouchEvent(TouchEventType event, Widget *sender, To
 		}		
 		break;
 	case cocos2d::ui::Widget::TouchEventType::BEGAN:
-		//获得目标控件
-		m_targetItem = _items.at(_curSelectedIndex);
-
 		_bMoved = false;
 		m_posBegintouch = touch->getLocation();
 
@@ -1014,7 +614,7 @@ void lly::ListView::changeWidgetEvent( changeItemType type )
 
 void ListView::visit( Renderer *renderer, const Mat4& parentTransform, bool parentTransformUpdated )
 {
-	llyO_for_lly_listview::ListView::visit(renderer, parentTransform, parentTransformUpdated);
+	ui::ListView::visit(renderer, parentTransform, parentTransformUpdated);
 
 	//改变目标控件的z轴在最上
 	if (m_targetItem == nullptr || m_bChangeZOrder == false) return;

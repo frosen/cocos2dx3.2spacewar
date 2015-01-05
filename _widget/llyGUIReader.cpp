@@ -113,12 +113,14 @@ lly::GUIReader::~GUIReader()
 
 cocos2d::ui::Widget* lly::WidgetPropertiesReader0300::widgetFromJsonDictionary( const rapidjson::Value& data )
 {
-	const char* classname = DICTOOL->getStringValue_json(data, "classname");
+	//去掉const
+	std::string strclassname = DICTOOL->getStringValue_json(data, "classname");
+
 	const rapidjson::Value& uiOptions = DICTOOL->getSubDictionary_json(data, "options");
 
 	//自己添加的内容开始====================================
 	const char* name = cocostudio::DICTOOL->getStringValue_json(uiOptions, "name");
-	CCLOG("%s is a %s, create", name, classname);
+	CCLOG("%s is a %s, create", name, strclassname.c_str());
 
 	//判断name开头是否是PO，代表point，则在map里面记录此控件的名称和位置
 	if (name && name[0] == 'P' && name[1] == 'O')
@@ -141,9 +143,11 @@ cocos2d::ui::Widget* lly::WidgetPropertiesReader0300::widgetFromJsonDictionary( 
 	{
 		std::string strTemp = "";
 		strTemp += name[2];
-		strTemp += classname;
-		classname = strTemp.c_str();
+		strTemp += strclassname;
+		strclassname = strTemp;
 	}
+
+	const char* classname = strclassname.c_str();
 	//结束======================
 
 	Widget* widget = this->createGUI(classname); //修改
@@ -219,106 +223,97 @@ cocos2d::ui::Widget* lly::WidgetPropertiesReader0300::widgetFromJsonDictionary( 
 }
 
 //===========================================
-void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, char* childname, ... )
+void lly::setWidgetFast( cocos2d::ui::Widget** widget, cocos2d::ui::Widget* father, char* childname )
 {
 	//获得控件
-	va_list args;
-	va_start(args, childname);
-	widget = getChildWidget(father, childname, args);
-	va_end(args);
+	*widget = getChildWidget(father, childname);
 }
 
-void lly::setWidgetFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, Widget::ccWidgetTouchCallback callback, char* childname, ... )
+void lly::setButtonFast( cocos2d::ui::Widget** widget, cocos2d::ui::Widget* father, Widget::ccWidgetTouchCallback callback, char* childname )
 {
 	//获得控件
-	va_list args;
-	va_start(args, childname);
-	widget = getChildWidget(father, childname, args);
-	va_end(args);
+	*widget = getChildWidget(father, childname);
+
+	//给控件赋予触控回调
+	(*widget)->addTouchEventListener(callback);
+}
+
+void lly::setButtonFast( cocos2d::ui::Widget* father, cocos2d::ui::Widget::ccWidgetTouchCallback callback, char* childname )
+{
+	//声明一个和widget类型一致的指针
+	cocos2d::ui::Widget* widget = nullptr;
+
+	//获得控件
+	widget = getChildWidget(father, childname);
 
 	//给控件赋予触控回调
 	widget->addTouchEventListener(callback);
 }
 
-void lly::setWidgetFast( cocos2d::ui::Widget* father, Widget::ccWidgetTouchCallback callback, char* childname, ... )
+void lly::setCheckBoxFast( cocos2d::ui::Widget** widget, cocos2d::ui::Widget* father, CheckBox::ccCheckBoxCallback callback, char* childname )
 {
-	//声明一个widget类型
-	cocos2d::ui::Widget* wiTemp = nullptr;
-
 	//获得控件
-	va_list args;
-	va_start(args, childname);
-	wiTemp = getChildWidget(father, childname, args);
-	va_end(args);
+	*widget = getChildWidget(father, childname);
 
-	//给控件赋予触控回调
-	wiTemp->addTouchEventListener(callback);
+	//给控件赋予触控回调（复选框的）
+	static_cast<cocos2d::ui::CheckBox*>(*widget)->addEventListener(callback);
 }
 
-void lly::setCheckBoxFast( cocos2d::ui::Widget* widget, cocos2d::ui::Widget* father, CheckBox::ccCheckBoxCallback callback, char* childname, ... )
+void lly::setCheckBoxFast( cocos2d::ui::Widget* father, CheckBox::ccCheckBoxCallback callback, char* childname )
 {
+	//声明一个和widget类型一致的指针
+	cocos2d::ui::Widget* widget = nullptr;
+
 	//获得控件
-	va_list args;
-	va_start(args, childname);
-	widget = getChildWidget(father, childname, args);
-	va_end(args);
+	widget = getChildWidget(father, childname);
 
 	//给控件赋予触控回调（复选框的）
 	static_cast<cocos2d::ui::CheckBox*>(widget)->addEventListener(callback);
 }
 
-void lly::setCheckBoxFast( cocos2d::ui::Widget* father, CheckBox::ccCheckBoxCallback callback, char* childname, ... )
+cocos2d::ui::Widget* lly::getChildWidget( cocos2d::ui::Widget* father, char* childname )
 {
-	//声明一个和widget类型一致的指针
-	cocos2d::ui::Widget* wiTemp = nullptr;
-
-	//获得控件
-	va_list args;
-	va_start(args, childname);
-	wiTemp = getChildWidget(father, childname, args);
-	va_end(args);
-
-	//给控件赋予触控回调（复选框的）
-	static_cast<cocos2d::ui::CheckBox*>(wiTemp)->addEventListener(callback);
-}
-
-cocos2d::ui::Widget* lly::getChildWidget( cocos2d::ui::Widget* father, char* pch, ... )
-{
+	std::string strError = "@wrong widget child: ";
 	do 
 	{
-		//确保父层为空，否则返回空值
 		if (!father) break;
 
-		//父层的第一层子控件
-		cocos2d::ui::Widget* wiChild = static_cast<cocos2d::ui::Widget*>(father->getChildByName(pch));
-		if (!wiChild) break;
-
-		//读入可变参数，每个参数往下读取一层的子控件
-		va_list params;
-		va_start(params, pch);
-		char* childname;
-
+		cocos2d::ui::Widget* wiChild = father;
+		std::string strName(childname);
+		std::string::size_type i = 0;
+		std::string::size_type n = 0;
+		std::string::size_type max = strName.size();
 		while (true)
 		{
-			childname = va_arg(params, char*);
+			n = strName.find('/', i);
 
-			if (childname == nullptr || childname[0] == '\0') break;
-
-			wiChild = static_cast<cocos2d::ui::Widget*>(wiChild->getChildByName(childname));
-			if (wiChild == nullptr) break;
+			if (n != std::string::npos)
+			{
+				wiChild = static_cast<cocos2d::ui::Widget*>(wiChild->getChildByName(strName.substr(i, n - i)));
+				if (wiChild == nullptr) 
+				{
+					strError += strName.substr(i, n - i);
+					break;
+				}
+				i = n + 1;
+			}
+			else
+			{
+				std::string a = strName.substr(i);
+				wiChild = static_cast<cocos2d::ui::Widget*>(wiChild->getChildByName(strName.substr(i)));
+				if (wiChild == nullptr) strError += strName.substr(i, n - i);
+				break;
+			}
 		}
-
-		va_end(params);
 
 		if (!wiChild) break;
 
 		//返回子控件
 		return wiChild;
-
 	} while (0);
-	
+
 	//如果子控件为空则打断
-	CCAssert(false, "@wrong widget child");
+	CCAssert(false, strError.c_str());
 	return nullptr;
 }
 

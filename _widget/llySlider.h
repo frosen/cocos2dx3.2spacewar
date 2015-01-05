@@ -1,11 +1,14 @@
 /*
 名称：llySlider.h
-内容：新的滑动条控件，父类的如下函数要加virtual
+内容：新的滑动条控件，
+
+				!!!!!< 父类的如下函数要加virtual:
 				loadSlidBallTextureNormal
 				loadSlidBallTexturePressed
 				loadSlidBallTextureDisabled
 				setPercent
-				barRendererScaleChangedWithSize
+				barRendererScaleChangedWithSize >!!!!!
+
 			特性：
             滑块不会跑出滑动区，
 			windows式的拖拽滑动方式
