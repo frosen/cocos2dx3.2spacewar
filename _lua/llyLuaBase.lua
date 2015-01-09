@@ -18,9 +18,12 @@ local lly = {
 	class = true,
 	struct = true,
 	array = true,
+	enum = true,
 	const = true,
 	set_pure_virtual_function = true,
-	ensure = true,
+	ensureType = true,
+	ensureNumber = true,
+	startupKeyboardForTest = true,
 }
 
 --代表空值，但是不释放对象
@@ -521,6 +524,31 @@ function lly.array(number, default)
 	return ar
 end
 
+--枚举
+function lly.enum(tab)
+	---[====[
+	if type(tab) ~= "table" then 
+		lly.error("create enum need a table param", 2)
+	end
+	--]====]
+
+	local e = {}
+
+	for i, v in ipairs(tab) do
+		e[v] = i
+	end
+	
+	---[====[
+	e.__ctype = 4
+	--]====]
+
+	---[====[
+	lly.finalizeInstance(e)
+	--]====]
+
+	return e
+end
+
 --只读的table
 function lly.const(table)
 	---[====[
@@ -571,7 +599,7 @@ end
 --确保对象属于某个类型，不属于则报错
 --基础类型和原始c类型的typename为文字
 --自定义类型和自定义结构体的typename为table
-function lly.ensure(value, typename)
+function lly.ensureType(value, typename)
 	---[====[
 	if value == nil or value == Lnull then return end --值为空则不进行检查
 
@@ -581,40 +609,94 @@ function lly.ensure(value, typename)
 		end
 
 	elseif type(typename) == "table" then
-		if value.__ctype == 1 or value.__ctype == 2 then --ctype == 1 or 2则为class，3是struct
-			if value.class == nil then --instance是对象
-				lly.error("value must be a instance", 2)
-			end
+		if value.__ctype then
+			if value.__ctype == 1 or value.__ctype == 2 then --ctype == 1 or 2则为class，3是struct
+				if value.class == nil then --instance是对象
+					lly.error("value must be a instance", 2)
+				end
 
-			if typename.__ctype == nil or typename.class ~= nil then --class是类
-				lly.error("typename must be a class", 2)
-			end
+				if typename.__ctype == nil or typename.class ~= nil then --class是类
+					lly.error("typename must be a class", 2)
+				end
 
-			if value.__ctype ~= typename.__ctype then
-				lly.error("value must belong to this class", 2)
-			end
+				if value.__ctype ~= typename.__ctype then
+					lly.error("value must belong to this class", 2)
+				end
 
-			local cname = value.__cname
-			while true do --看是否自己是或者父类是
-				if cname ~= typename.__cname then
-					if value.super ~= false then --检测是否还有父类
-						cname = value.super.__cname
-					else
-						lly.error("value must belong to this class", 2)						
-					end
-				else break end
-			end
+				local cname = value.__cname
+				while true do --看是否自己是或者父类是
+					if cname ~= typename.__cname then
+						if value.super ~= false then --检测是否还有父类
+							cname = value.super.__cname
+						else
+							lly.error("value must belong to this class", 2)						
+						end
+					else break end
+				end
 
-		elseif value.__ctype == 3 then
-			if value.__structID ~= typename.__ID then
-				lly.error("value must belong to this struct", 2)
+			elseif value.__ctype == 3 then
+				if value.__structID ~= typename.__ID then
+					lly.error("value must belong to this struct", 2)
+				end
+			else
+				lly.error("value is illegal", 2)
 			end
 		else
-			lly.error("value is illegal", 2)
+			if typename.__ctype == 4 then --枚举的value为数字，所以从typename判断
+				if type(value) ~= "number" or value <= 0 or value > #typename then
+					lly.error("enum wrong: value is " .. tostring(value) .. 
+						", but enum form 0 to " .. #typename, 2)
+				end
+			else
+				lly.error("value is illegal", 2)
+			end
 		end
+
 	else
 		lly.error("typename must be a string/table", 2)
 	end
+	--]====]
+end
+
+--确保一个值在两者之间
+function lly.ensureNumber(min, minsign, v, maxsign, max)
+	---[====[
+	if type(min) == "number" then
+		if minsign == "<=" then
+			if min > v then lly.error("less than min") end
+		elseif minsign == "<" then
+			if min >= v then lly.error("equal or less than min") end
+		else
+			lly.error("wrong sign")
+		end
+	end
+
+	if type(max) == "number" then
+		if maxsign == "<=" then
+			if v > max then lly.error("more than max") end
+		elseif maxsign == "<" then
+			if v >= max then lly.error("equal or more than max") end
+		else
+			lly.error("wrong sign")
+		end
+	end
+
+	--]====]
+end
+
+function lly.startupKeyboardForTest(node, key, func)
+	---[====[
+	local function onKeyReleased(keyCode, event)
+		if keyCode == key then
+			func()
+		end
+	end
+
+    local listener = cc.EventListenerKeyboard:create()
+    listener:registerScriptHandler(onKeyReleased, cc.Handler.EVENT_KEYBOARD_RELEASED )
+
+    local eventDispatcher = node:getEventDispatcher()
+    eventDispatcher:addEventListenerWithFixedPriority(listener, 1)
 	--]====]
 end
 
