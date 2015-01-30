@@ -54,8 +54,6 @@ void lly::ShaderEffectBase::setTarget( cocos2d::Sprite* sprite )
 
 		m_target = sprite;
 		m_eTargetType = ETargetType::SPRITE;
-
-		retain();
 	}
 }
 
@@ -67,8 +65,6 @@ void lly::ShaderEffectBase::setTargetWithChild( cocos2d::Node* node )
 
 		m_target = node;
 		m_eTargetType = ETargetType::NODE_WITH_CHILD;
-
-		retain();
 	}
 	
 }
@@ -95,8 +91,6 @@ void lly::ShaderEffectBase::restoreTarget(cocos2d::GLProgramState* glProgramStat
 
 	m_target = nullptr;
 	m_eTargetType = ETargetType::NONE_TARGET;
-
-	release();
 }
 
 bool lly::ShaderEffectBase::init( const std::string &vert, const std::string &frag )

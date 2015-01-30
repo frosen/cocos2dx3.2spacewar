@@ -12,7 +12,7 @@ lly::GUIReader* lly::GUIReader::getInstance()
 {
 	if (!sharedReader)
 	{
-		sharedReader = new lly::GUIReader();
+		sharedReader = new (std::nothrow) lly::GUIReader();
 	}
 	return sharedReader;
 }
@@ -299,9 +299,9 @@ cocos2d::ui::Widget* lly::getChildWidget( cocos2d::ui::Widget* father, char* chi
 			}
 			else
 			{
-				std::string a = strName.substr(i);
+				//std::string a = strName.substr(i);
 				wiChild = static_cast<cocos2d::ui::Widget*>(wiChild->getChildByName(strName.substr(i)));
-				if (wiChild == nullptr) strError += strName.substr(i, n - i);
+				if (wiChild == nullptr) strError += strName.substr(i);
 				break;
 			}
 		}

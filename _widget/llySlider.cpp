@@ -24,7 +24,7 @@ Slider::~Slider()
 
 Slider* Slider::create()
 {
-    Slider* widget = new Slider();
+    Slider* widget = new (std::nothrow) Slider();
     if (widget && widget->init())
     {
         widget->autorelease();

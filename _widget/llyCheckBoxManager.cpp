@@ -16,7 +16,7 @@ lly::CheckBoxManager::~CheckBoxManager()
 
 CheckBoxManager* lly::CheckBoxManager::createWithCheckBox( lly::CheckBox* cb, ... )
 {
-    CheckBoxManager* pRet = new CheckBoxManager();
+    CheckBoxManager* pRet = new (std::nothrow) CheckBoxManager();
     if (pRet && cb) //新建无误，且第一个控件不为空
     {
 		std::function <void(lly::CheckBox*, bool)> func = 

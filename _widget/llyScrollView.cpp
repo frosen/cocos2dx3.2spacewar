@@ -25,7 +25,7 @@ lly::ScrollView::~ScrollView()
 
 lly::ScrollView* lly::ScrollView::create()
 {
-	auto widget = new lly::ScrollView();
+	auto widget = new (std::nothrow) lly::ScrollView();
 	if (widget && widget->init())
 	{
 		widget->autorelease();

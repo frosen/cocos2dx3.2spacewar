@@ -17,7 +17,7 @@ lly::CheckBox::~CheckBox()
 
 CheckBox* lly::CheckBox::create()
 {
-	CheckBox* widget = new CheckBox();
+	CheckBox* widget = new (std::nothrow) CheckBox();
 	if (widget && widget->init())
 	{
 

@@ -11,6 +11,7 @@ local lly = {
 	logCurLocAnd = true,
 	logTraceback = true,
 	logTable = true,
+	logClass = true,
 	error = true,
 	finalizeGlobalEnvironment = true,
 	finalizeCurrentEnvironment = true,
@@ -18,8 +19,9 @@ local lly = {
 	class = true,
 	struct = true,
 	array = true,
-	enum = true,
 	const = true,
+	enum = true,
+	ptr = true,	
 	set_pure_virtual_function = true,
 	ensureType = true,
 	ensureNumber = true,
@@ -84,34 +86,72 @@ end
 --打印table中所有内容
 function lly.logTable(t, index)
 	---[====[
-	if index == nil then
-		lly.log("TABLE:")
-	end
+	lly.log("TABLE: --------------------------------------")
 
-	local space = "    "
-	local _space = " "
-	if index ~= nil then
+	local function _logTable(t, index)
+		local space = "   "
+		local _space = " "
+		
 		for i = 1, index do
 			_space = _space .. space
 		end
 		index = index + 1
-	else
-		index = 1
+
+		if t == nil then 
+			lly.log(_space .. "table is nil") 
+			return
+		end
+
+		for k,v in pairs(t) do
+			if type(v) ~= "table" then
+				lly.log("%s%s[%s]      %s[%s]", 
+					_space, tostring(k), type(k), tostring(v), type(v))
+			else
+				lly.log(_space .. "T[".. tostring(k) .. "]------------------")
+				_logTable(v, index)
+			end
+		end
 	end
+	_logTable(t, 1)
 
-	if not t then lly.log(_space .. "table is nil") end
+	lly.log("log END!-----------------------------------------------")
+	--]====]
+end
 
-	for k,v in pairs(t) do
-		if type(v) ~= "table" then
-			lly.log("%s%s[%s]  %s[%s]", 
-				_space, tostring(k), type(k), tostring(v), type(v))
-		else
-			lly.log(_space .. "T[".. tostring(k) .. "]------------------")
-			lly.logTable(v, index)
+function lly.logClass(instance)
+	local peer = tolua.getpeer(instance)
+	if not peer or type(peer) ~= "table" then lly.error("wrong ins peer") end
+
+	lly.log("[%s]-------------------------------", tostring(instance.__class.__cname))
+
+	lly.log("attribute:")
+	for k,v in pairs(peer) do
+		lly.log("%s = %s[%s]", tostring(k), tostring(v), type(v))
+		if type(v) == "table" then
+			for k, v2 in pairs(v) do
+				lly.log("      %s = %s[%s]", tostring(k), tostring(v2), type(v2))
+			end
 		end
 	end
 
-	--]====]
+	lly.log(" ")
+	lly.log("function:")
+
+	local space = "   "
+	local _space = " "
+
+	function printMeta(tab)
+		local meta = getmetatable(tab)
+		if meta then 
+			for k, v in pairs(meta) do
+				lly.log("%s%s = %s[%s]", _space, tostring(k), tostring(v), type(v))
+			end
+			_space = _space .. space
+			printMeta(meta)
+		end
+	end
+	printMeta(peer)
+	lly.log("log END!-----------------------------")
 end
 
 --错误
@@ -524,6 +564,26 @@ function lly.array(number, default)
 	return ar
 end
 
+--只读的table
+function lly.const(table)
+	---[====[
+	if type(table) ~= "table" then 
+		lly.error("create const need a table param", 2)
+	end
+	local oldtable = table --交换是为了能在注释以外直接返回table
+	table = {}
+	local mt = {
+		__index = oldtable,
+		__newindex = function (t, k, v)
+			lly.error("it is a const table")
+		end
+	}
+	setmetatable(table, mt)
+
+	--]====]
+	return table
+end
+
 --枚举
 function lly.enum(tab)
 	---[====[
@@ -543,29 +603,41 @@ function lly.enum(tab)
 	--]====]
 
 	---[====[
-	lly.finalizeInstance(e)
+	e = lly.const(e)
 	--]====]
 
 	return e
 end
 
---只读的table
-function lly.const(table)
+--指针 本身是一个table，可以通过各种方式传递
+--内置一个值，可以通过set和get设定和获取这个值
+--创建时，如果这个值在一个table里则输入这个table和其文本名，如(self, "m_wiRoot")
+--如果不在table里，则不能使用
+function lly.ptr(env, name)
 	---[====[
-	if type(table) ~= "table" then 
-		lly.error("create const need a table param", 2)
+	if type(env) ~= "table" then
+		lly.error("wrong env")
 	end
-	local oldtable = table --交换是为了能在注释以外直接返回table
-	table = {}
-	local mt = {
-		__index = oldtable,
-		__newindex = function (t, k, v)
-			lly.error("it is a const table")
-		end
-	}
-	setmetatable(table, mt)
+	if type(name) ~= "string" then
+		lly.error("wrong name")
+	end
+	if env[name] == nil then
+		lly.error("env not has name")
+	end
 	--]====]
-	return table
+
+	return lly.const{
+		__env = env,
+		__name = name,
+		set = function(self, value)
+			self.__env[self.__name] = value
+		end,
+
+		get = function(self)
+			return self.__env[self.__name]
+		end,
+	}
+
 end
 
 
@@ -664,20 +736,16 @@ function lly.ensureNumber(min, minsign, v, maxsign, max)
 	if type(min) == "number" then
 		if minsign == "<=" then
 			if min > v then lly.error("less than min") end
-		elseif minsign == "<" then
-			if min >= v then lly.error("equal or less than min") end
 		else
-			lly.error("wrong sign")
+			if min >= v then lly.error("equal or less than min") end
 		end
 	end
 
 	if type(max) == "number" then
 		if maxsign == "<=" then
 			if v > max then lly.error("more than max") end
-		elseif maxsign == "<" then
-			if v >= max then lly.error("equal or more than max") end
 		else
-			lly.error("wrong sign")
+			if v >= max then lly.error("equal or more than max") end
 		end
 	end
 

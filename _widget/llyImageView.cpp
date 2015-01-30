@@ -27,7 +27,7 @@ ImageView* lly::ImageView::create()
 
 ImageView* lly::ImageView::create( const std::string& imageFileName, TextureResType texType /*= TextureResType::LOCAL*/ )
 {
-	 lly::ImageView *widget = new  lly::ImageView;
+	 lly::ImageView *widget = new (std::nothrow) lly::ImageView;
 	if (widget && widget->init(imageFileName, texType)) {
 		widget->autorelease();
 		return widget;

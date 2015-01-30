@@ -32,7 +32,7 @@ ListView::~ListView()
 
 ListView* ListView::create()
 {
-	ListView* widget = new ListView();
+	ListView* widget = new (std::nothrow) ListView();
 	if (widget && widget->init())
 	{
 		widget->autorelease();
@@ -439,7 +439,7 @@ lly::TableView::~TableView()
 
 TableView* lly::TableView::create()
 {
-	TableView* widget = new TableView();
+	TableView* widget = new (std::nothrow) TableView();
 	if (widget && widget->init())
 	{
 		widget->autorelease();

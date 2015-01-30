@@ -30,7 +30,7 @@ lly::ListView::~ListView()
 
 lly::ListView* lly::ListView::create()
 {
-	auto wi = new lly::ListView();
+	auto wi = new (std::nothrow) lly::ListView();
 	if (wi && wi->init())
 	{
 		wi->autorelease();
