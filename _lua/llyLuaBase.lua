@@ -19,12 +19,12 @@ local lly = {
 	class = true,
 	struct = true,
 	array = true,
+	initTable = true,
 	const = true,
 	enum = true,
 	ptr = true,	
 	set_pure_virtual_function = true,
-	ensureType = true,
-	ensureNumber = true,
+	ensure = true,
 	startupKeyboardForTest = true,
 }
 
@@ -84,7 +84,7 @@ function lly.logTraceback()
 end
 
 --打印table中所有内容
-function lly.logTable(t, index)
+function lly.logTable(t)
 	---[====[
 	lly.log("TABLE: --------------------------------------")
 
@@ -564,6 +564,32 @@ function lly.array(number, default)
 	return ar
 end
 
+--对table进行初始化，可检测类型，如果原值为nil则不赋值而用原始值
+--table也可以是struct和array
+--参数为：table名，一个key为table中要赋值的key名，value为要赋的值的table
+function lly.initTable(table, valueTable)
+	---[====[
+	if type(table) ~= "table" then 
+		lly.error("table need be a table param", 2)
+	end
+
+	if type(valueTable) ~= "table" then 
+		lly.error("valueTable need be a table param", 2)
+	end
+	--]====]
+
+	for k, v in pairs(valueTable) do
+		if v then
+			---[====[
+			if type(v) ~= type(table[k]) then 
+				lly.error("wrong type: " .. type(table[k]) .. " " .. type(v))
+			end
+			--]====]
+			table[k] = v
+		end
+	end
+end
+
 --只读的table
 function lly.const(table)
 	---[====[
@@ -671,7 +697,7 @@ end
 --确保对象属于某个类型，不属于则报错
 --基础类型和原始c类型的typename为文字
 --自定义类型和自定义结构体的typename为table
-function lly.ensureType(value, typename)
+local function __ensure(value, typename)
 	---[====[
 	if value == nil or value == Lnull then return end --值为空则不进行检查
 
@@ -727,28 +753,25 @@ function lly.ensureType(value, typename)
 	else
 		lly.error("typename must be a string/table", 2)
 	end
+
 	--]====]
 end
 
---确保一个值在两者之间
-function lly.ensureNumber(min, minsign, v, maxsign, max)
+function lly.ensure(tab)
 	---[====[
-	if type(min) == "number" then
-		if minsign == "<=" then
-			if min > v then lly.error("less than min") end
+	local value
+	local typename
+	local b = false
+	for i, v in ipairs(tab) do
+		if b == false then
+			b = true
+			value = v
 		else
-			if min >= v then lly.error("equal or less than min") end
+			b = false
+			typename = v
+			__ensure(value, typename)
 		end
 	end
-
-	if type(max) == "number" then
-		if maxsign == "<=" then
-			if v > max then lly.error("more than max") end
-		else
-			if v >= max then lly.error("equal or more than max") end
-		end
-	end
-
 	--]====]
 end
 
