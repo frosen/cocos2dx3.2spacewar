@@ -607,7 +607,7 @@ void lly::TableView::updateInnerContainerSize()
 			float f = abs(getItem(0)->getPositionY() - getLastItem()->getPositionY()) + m_fTopMargin + m_fBottomMargin;
 			if (f > _contentSize.height && f != _innerContainer->getContentSize().height )
 			{
-				setInnerContainerSize(CCSize( _contentSize.width, f ));
+				setInnerContainerSize(Size( _contentSize.width, f ));
 
 				if (m_eTVG == ETableViewGravity::LEFT_TOP || m_eTVG == ETableViewGravity::RIGHT_TOP)
 				{
@@ -640,7 +640,7 @@ void lly::TableView::updateInnerContainerSize()
 
 			if (f >= _contentSize.width && f != _innerContainer->getContentSize().width )
 			{
-				setInnerContainerSize(CCSize( f, _contentSize.height ));
+				setInnerContainerSize(Size( f, _contentSize.height ));
 
 				if (m_eTVG == ETableViewGravity::RIGHT_TOP || m_eTVG == ETableViewGravity::RIGHT_BOTTOM)
 				{

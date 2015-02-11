@@ -61,9 +61,9 @@ void lly::ListView::insertDefaultItem(ssize_t index)
 		if (_refreshViewDirty) return;
 
 		//判断要插入的点是否存在
-		if (index > (int)_items.size())
+		if ((int)index > (int)_items.size())
 		{
-			CCLOG("count %d small than %d", _items.size(), index);
+			CCLOG("count %d small than %d", (int)_items.size(), (int)index);
 			return;
 		}
 
@@ -99,9 +99,9 @@ void lly::ListView::insertCustomItem(Widget* item, ssize_t index)
 		if (_refreshViewDirty) return;
 
 		//判断要插入的点是否存在
-		if (index > (int)_items.size())
+		if ((int)index > (int)_items.size())
 		{
-			CCLOG("count %d small than %d", _items.size(), index);
+			CCLOG("count %d small than %d", (int)_items.size(), (int)index);
 			return;
 		}
 
