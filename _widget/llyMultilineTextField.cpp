@@ -333,7 +333,7 @@ void lly::MultilineTextField::deleteBackward()
 
 const std::string& lly::MultilineTextField::getContentText()
 {
-	return "";
+	return std::string("");
 }
 
 void lly::MultilineTextField::keyboardWillShow( IMEKeyboardNotificationInfo& info )
@@ -444,7 +444,7 @@ void lly::MultilineTextField::moveCursorByTouch( cocos2d::Vec2 &touchBeganPoint 
 
 void lly::MultilineTextField::interceptTouchEvent( cocos2d::ui::Widget::TouchEventType event, cocos2d::ui::Widget* sender, cocos2d::Touch* touch )
 {
-	llyO_for_lly_scrollview::ScrollView::interceptTouchEvent(event, sender, touch);
+	ScrollView::interceptTouchEvent(event, sender, touch);
 }
 
 void lly::MultilineTextField::UpdateCursor()
