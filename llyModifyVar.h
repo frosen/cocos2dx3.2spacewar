@@ -1,8 +1,8 @@
 /*
-	Ãû³Æ£ºllyModifyVar.h
-	ÃèÊö£º´´ÔìÒ»¸ö¶¯×÷£¬¿ÉÒÔÈÃÒ»¸ö±äÁ¿ÔÚÒ»¶¨Ê±¼äÄÚ²»¶ÏµØ±»¸³Öµ£¬´ÓÒ»¸ö¿ªÊ¼µÄÖµµ½×îÖÕÖµ±ä»¯
-	×÷Õß£ºÀÖÑÕ
-	ÈÕÆÚ£º2014.7.1
+	åç§°ï¼šllyModifyVar.h
+	æè¿°ï¼šåˆ›é€ ä¸€ä¸ªåŠ¨ä½œï¼Œå¯ä»¥è®©ä¸€ä¸ªå˜é‡åœ¨ä¸€å®šæ—¶é—´å†…ä¸æ–­åœ°è¢«èµ‹å€¼ï¼Œä»ä¸€ä¸ªå¼€å§‹çš„å€¼åˆ°æœ€ç»ˆå€¼å˜åŒ–
+	ä½œè€…ï¼šä¹é¢œ
+	æ—¥æœŸï¼š2014.7.1
 */
 
 #ifndef _MODIFY_FUNC_VAR_H_
@@ -18,27 +18,30 @@ public:
 	ModifyVar();
 	virtual ~ModifyVar();
 
-	//Í¨¹ıÒ»¸ö³õÊ¼Á¿£¬±ä»¯Ê±¼ä£¬×îÖÕÊıÖµÀ´ĞŞ¸ÄÒ»¸ö½ÓÊÕ¸Ä±äºóÊıÖµµÄ»Øµ÷º¯Êı
-	static ModifyVar* create(float duration, float start, float destination, std::function<void(float)> Modify);
+	//é€šè¿‡ä¸€ä¸ªå˜åŒ–æ—¶é—´ï¼Œæ¥ä¿®æ”¹ä¸€ä¸ªæ¥æ”¶æ”¹å˜åæ•°å€¼çš„å›è°ƒå‡½æ•°
+	static ModifyVar* create(float duration, float destination,
+		std::function<float()> getStart, std::function<void(float)> Modify);
 
 	//override
 	virtual ModifyVar* clone() const override;
-	virtual ModifyVar* reverse(void) const override;	
 	virtual void startWithTarget(cocos2d::Node *pTarget) override;
 	virtual void update(float time) override;
 
 protected:
-	bool initWithDuration(std::function<void(float)> Modify, float duration, float start, float destination);
+	bool initWithDuration(float duration, float destination,
+		std::function<float()> getStart, std::function<void(float)> Modify);
 
-	std::function<void(float)> Modify_cb; //»Øµ÷
+	//å¼€å§‹æ—¶è·å–åˆå§‹æ•°å€¼çš„å›è°ƒï¼Œå› ä¸ºæ•°å­—ä¼šå˜ï¼Œä¸èƒ½åœ¨å»ºç«‹å‡½æ•°æ—¶ç¡®å®šåˆå§‹æ•°å€¼
+	std::function<float()> getStart_cb;
+	std::function<void(float)> Modify_cb; //æ¯å¸§è°ƒæ•´æ•°å€¼çš„å›è°ƒ
 
-	float m_fDuration; //³ÖĞøÊ±¼ä
+	float m_fDuration; //æŒç»­æ—¶é—´
 
-	float m_fStart; //¿ªÊ¼ÊıÖµ	
-	float m_fDestination; //×îÖÕÊıÖµ
+	float m_fDestination; //æœ€ç»ˆæ•°å€¼
 
-	float m_fDelta; //Ã¿´ÎË¢ĞÂÊ±µÄ±ä»¯Á¿
-	int nPlusOrMinus; //int 1ÎªÕıÊı£¬-1Îª¸ºÊı
+	float m_fValue; //è®°å½•å½“å‰å€¼
+	float m_fDelta; //æ¯æ¬¡åˆ·æ–°æ—¶çš„å˜åŒ–é‡
+	int nPlusOrMinus; //int 1ä¸ºæ­£æ•°ï¼Œ-1ä¸ºè´Ÿæ•° é»˜è®¤ä¸º+
 
 private:
 	CC_DISALLOW_COPY_AND_ASSIGN(ModifyVar);
