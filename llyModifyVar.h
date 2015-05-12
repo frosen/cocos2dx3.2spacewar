@@ -35,8 +35,6 @@ protected:
 	std::function<float()> getStart_cb;
 	std::function<void(float)> Modify_cb; //每帧调整数值的回调
 
-	float m_fDuration; //持续时间
-
 	float m_fDestination; //最终数值
 
 	float m_fValue; //记录当前值

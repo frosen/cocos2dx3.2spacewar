@@ -29,7 +29,6 @@ public:
 protected:
     bool initWithDuration(float duration, std::function<void(float)> call);
 
-    float m_fDuration; //持续时间
     std::function<void(float)> m_call; //每帧的回调
 
 private:

@@ -31,7 +31,7 @@ CallPerFrame* CallPerFrame::create( float duration, std::function<void(float)> c
 CallPerFrame* CallPerFrame::clone() const
 {
     auto a = new CallPerFrame();
-    a->initWithDuration(m_fDuration, m_call);
+    a->initWithDuration(_duration, m_call);
     a->autorelease();
     return a;
 }

@@ -32,7 +32,7 @@ ModifyVar* ModifyVar::create( float duration, float destination, std::function<f
 ModifyVar* ModifyVar::clone() const
 {
 	auto a = new ModifyVar();
-	a->initWithDuration(m_fDuration, m_fDestination, getStart_cb, Modify_cb);
+	a->initWithDuration(_duration, m_fDestination, getStart_cb, Modify_cb);
 	a->autorelease();
 	return a;
 }
@@ -43,7 +43,7 @@ void ModifyVar::startWithTarget( Node *pTarget )
 
 	//先准备好每帧变化的数值
     m_fValue = getStart_cb();
-	m_fDelta = (m_fDestination - m_fValue) / (m_fDuration / Director::getInstance()->getAnimationInterval());
+	m_fDelta = (m_fDestination - m_fValue) / (_duration / Director::getInstance()->getAnimationInterval());
 
 	//准备好对结束的检测
 	if (m_fValue < m_fDestination) nPlusOrMinus = -1;
@@ -73,8 +73,6 @@ bool ModifyVar::initWithDuration( float duration, float destination,
 
 		getStart_cb = getStart;
 		Modify_cb = Modify;
-
-		m_fDuration = duration;
 
 		return true;
 	}

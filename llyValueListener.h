@@ -41,16 +41,13 @@ protected:
 	void onDone();
 
 protected:
-	std::function<void(float)> excute_cb; //执行中的回调
-
 	float* m_pfvar; //被监听的数值
 	std::function<float(void)> listen_cb; //被监听的函数
 
 	float m_fconstant; //常数
 	int m_nType; //常数大 = -1；常数小 = 1；
-	float fTemp; //临时变量，接受回调返回的float
 	
-	std::function<void(void)> doAfte_cb; //回调函数
+	std::function<void(void)> doAfter_cb; //回调函数
 
 	float m_fMaxWaitingSecond; //最长持续时间
 	float m_fTimeDelay; //总持续时间

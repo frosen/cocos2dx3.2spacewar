@@ -3,7 +3,7 @@
 USING_NS_CC;
 using namespace lly;
 
-ValueListener::ValueListener() : m_pfvar(nullptr), m_fMaxWaitingSecond(-1), m_fTimeDelay(0), excute_cb(nullptr)
+ValueListener::ValueListener() : m_pfvar(nullptr), m_fMaxWaitingSecond(-1), m_fTimeDelay(0)
 {
 
 }
@@ -52,8 +52,7 @@ void ValueListener::run()
 void ValueListener::update( float dt )
 {
 	if (m_pfvar)
-	{
-		if (excute_cb) excute_cb(*m_pfvar);
+	
 		if ((*m_pfvar) * m_nType <= m_fconstant * m_nType)
 		{
 			onDone();	
@@ -62,9 +61,7 @@ void ValueListener::update( float dt )
 	}
 	else
 	{
-		fTemp = listen_cb();
-		if (excute_cb) excute_cb(fTemp);
-		if (fTemp * m_nType <= m_fconstant * m_nType)
+		if (listen_cb() * m_nType <= m_fconstant * m_nType)
 		{
 			onDone();
 			return;
@@ -89,7 +86,7 @@ bool ValueListener::init( float* var, std::function<float(void)> listen, float a
 		m_pfvar = var;
 		listen_cb = listen;
 		m_fconstant = aim;
-		doAfte_cb = doAfter;
+		doAfter_cb = doAfter;
 		m_fMaxWaitingSecond = maxWaitingTime;
 
 		if (listen_cb() > m_fconstant) //最开始的数比要到达的数大还是小
@@ -107,7 +104,7 @@ bool ValueListener::init( float* var, std::function<float(void)> listen, float a
 
 void ValueListener::onDone()
 {
-	doAfte_cb(); //执行
+	doAfter_cb(); //执行
 	Director::getInstance()->getScheduler()->unscheduleUpdate(this); //停止
 	CC_SAFE_RELEASE(this); //释放
 }
