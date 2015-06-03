@@ -1,12 +1,12 @@
-/*
-Ãû³Æ£ºI18N.h
-ÃèÊö£º¹ú¼Ê»¯×Ö·û´®¹¤¾ß
-×÷Õß£ºÀÖÑÕ
-ÈÕÆÚ£º2013.12.24
+ï»¿/*
+åç§°ï¼šI18N.h
+æè¿°ï¼šå›½é™…åŒ–å­—ç¬¦ä¸²å·¥å…·
+ä½œè€…ï¼šä¹é¢œ
+æ—¥æœŸï¼š2013.12.24
 
-//////////////ĞèÒª¶¨ÒåPATH_I18N_PUBLIC£ºcsvÎÄ¼şÂ·¾¶//////////////////
+//////////////éœ€è¦å®šä¹‰PATH_I18N_PUBLICï¼šcsvæ–‡ä»¶è·¯å¾„//////////////////
 
-//////////////ĞèÒª include "ToolCsvLoad.h"//////////////////
+//////////////éœ€è¦ include "CsvLoad.h"//////////////////
 */
 
 #ifndef _I18N_H_
@@ -14,8 +14,12 @@
 
 #include "cocos2d.h"
 
+// æ–‡ä»¶æ ¼å¼å¦‚ä¸‹ï¼š
+// id    english    chinese
+// name1  Tom        æ±¤å§†
+// name2  Jake       æ°å…‹
 #ifndef PATH_I18N
-#define PATH_I18N "i18n.csv"
+#define PATH_I18N "i18n/i18n.csv"
 #endif
 
 #ifndef i18n
@@ -27,9 +31,9 @@ namespace lly {
 class I18N : public cocos2d::Ref
 {
 public:
-	enum LangType
+	enum class LangType
 	{
-		ENGLISH = 1,
+		ENGLISH = 1, //1å¯¹åº”ç¬¬äºŒåˆ—ï¼Œå› ä¸ºç¬¬ä¸€åˆ—æ˜¯id
 		CHINESE,
 		FRENCH,
 		ITALIAN,
@@ -47,31 +51,33 @@ public:
 	};
 
 	I18N();
-	~I18N();
+	virtual ~I18N();
 
-	//µ¥Àı
+	//å•ä¾‹
 	static I18N* getInstance();
 	static void destroyInstance();
+    
+    //å˜æ›´è¯­è¨€ é»˜è®¤ä¸º1
+    static void setLanguageType(LangType langType);
+    static LangType getLanguageType() { return S_elanguage; }
 
-	//¸ù¾İkey»ñÈ¡×Ö·û´®£¬·µ»Øchar¶ÔÏó
+	//æ ¹æ®keyè·å–å­—ç¬¦ä¸²ï¼Œè¿”å›charå¯¹è±¡
 	std::string getString(const char* ch) { return m_mapString.at(ch); }
 
-	//±ä¸üÓïÑÔ Ä¬ÈÏÎª1
-	void setLanguageType(LangType langType);
-	LangType getLanguageType() { return elanguage; }
-
 protected:
-	//´ÓÅäÖÃÎÄ¼şÖĞ¶ÁÈ¡×Ö·û´®£¬·ÅÖÃÓÚ×ÖµäÀï
+	//ä»é…ç½®æ–‡ä»¶ä¸­è¯»å–å­—ç¬¦ä¸²ï¼Œæ”¾ç½®äºå­—å…¸é‡Œ
 	bool loadStringFromConf(const char* sFilePath);
+    
+    void setLanguageType_(LangType langType);
 
 protected:
-	static I18N* s_I18N;
+	static I18N* S_I18N;
 
-	//×Öµä£º ID£¬×Ö·û´®
-	std::map<std::string, std::string> m_mapString;
+	//å­—å…¸ï¼š IDï¼Œå­—ç¬¦ä¸² æ— åºmapçš„æ•ˆç‡æ›´é«˜
+	std::unordered_map<std::string, std::string> m_mapString;
 
-	//ÓïÑÔÑ¡Ôñ
-	LangType elanguage;
+	//è¯­è¨€é€‰æ‹©
+	static LangType S_elanguage;
 };
 
 } //lly
