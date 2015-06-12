@@ -1,8 +1,10 @@
-/*
-	Ãû³Æ£ºllyAngleToVec.h
-	ÃèÊö£º°Ñ½Ç¶È×ª»»³ÉÏòÁ¿£¬»¹¿ÉÒÔ¸ù¾İÁ½µã¼ÆËã³ö´Ë½Ç¶ÈÏòÁ¿
-	×÷Õß£ºÀÖÑÕ
-	ÈÕÆÚ£º2014.8.3
+ï»¿/*
+	åç§°ï¼šllyAngleToVec.h
+	æè¿°ï¼šæŠŠè§’åº¦è½¬æ¢æˆå‘é‡ï¼Œè¿˜å¯ä»¥æ ¹æ®ä¸¤ç‚¹è®¡ç®—å‡ºæ­¤è§’åº¦å‘é‡
+				åˆå§‹åŒ–0-360åº¦çš„çŸ¢é‡å€¼ï¼ŒæŸ¥è¡¨å¾—å‘é‡ï¼Œ
+				ç”±äºçŸ¢é‡ç”±xï¼Œyç»„æˆï¼Œä¸ºäº†èŠ‚çœç©ºé—´ï¼Œåˆ™è½½å…¥0-450åº¦ï¼Œyè½´çš„å€¼ç­‰äºxè½´å¢åŠ 90åº¦çš„å€¼
+	ä½œè€…ï¼šä¹é¢œ
+	æ—¥æœŸï¼š2014.8.3
 */
 
 #ifndef _ANGLE_TO_VEC_H_
@@ -40,29 +42,29 @@ public:
 	AngleToVec();
 	~AngleToVec();
 
-	//µ¥Àı
+	//å•ä¾‹
 	static AngleToVec* getInstance();
 	static void destroyInstance();
 
-	//¸ù¾İ½Ç¶È»ñÈ¡ÏòÁ¿£¨´Ó0µ½359£©
+	//æ ¹æ®è§’åº¦è·å–å‘é‡ï¼ˆä»0åˆ°359ï¼‰
 	AngleVec getVec(int angle);
 
-	//¸ù¾İ½Ç¶ÈºÍ¾àÀë»ñµÃÏòÁ¿
+	//æ ¹æ®è§’åº¦å’Œè·ç¦»è·å¾—å‘é‡
 	AngleVec getVec(int angle, float distance);
 
 protected:
 	virtual bool init();
 
 protected:
-	static AngleToVec* s_A2V; //µ¥Àı
+	static AngleToVec* s_A2V; //å•ä¾‹
 
-	float m_fVec[450]; //´Ó0µ½449¶È³¤¶ÈÎª1µÄÊ¸Á¿Öµ
+	float m_fVec[450]; //ä»0åˆ°449åº¦é•¿åº¦ä¸º1çš„çŸ¢é‡å€¼
 };
 
-//¸ù¾İÁ½µãÎ»ÖÃ¼ÆËãÏòÁ¿
+//æ ¹æ®ä¸¤ç‚¹ä½ç½®è®¡ç®—å‘é‡
 AngleVec getVecFrom2Points(float x, float y, float xOrig, float yOrig);
 
-//¸ù¾İÁ½µãÎ»ÖÃºÍ¾àÀë¼ÆËãÏòÁ¿
+//æ ¹æ®ä¸¤ç‚¹ä½ç½®å’Œè·ç¦»è®¡ç®—å‘é‡
 AngleVec getVecFrom2Points(float x, float y, float xOrig, float yOrig, float dis);
 
 } //lly end

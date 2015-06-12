@@ -1,96 +1,111 @@
-#include "llyI18N.h"
-#include "llyCSVLoad.h"
+ï»¿#include "llyI18N.h"
+#include "llyCSVLoader.h"
 
 USING_NS_CC;
 using namespace lly;
 
-I18N* I18N::s_I18N = nullptr;
+I18N* I18N::S_I18N = nullptr;
+I18N::LangType I18N::S_elanguage = I18N::LangType::ENGLISH;
 
-I18N::I18N() : elanguage(ENGLISH)
+I18N::I18N()
 {
 
 }
 
 I18N::~I18N()
 {
- 	
+
 }
 
 I18N* I18N::getInstance()
 {
-	if (nullptr == s_I18N)
+	if (nullptr == S_I18N)
 	{
-		s_I18N = new I18N();
-		if (s_I18N && s_I18N->loadStringFromConf(PATH_I18N))
+        S_I18N = new (std::nothrow) I18N();
+		if (S_I18N && S_I18N->init())
 		{
-			return s_I18N;
+			return S_I18N;
 		}
 		else
 		{
-			CC_SAFE_DELETE(s_I18N);
+			CC_SAFE_DELETE(S_I18N);
 			return nullptr;
 		}
 	}
-	return s_I18N;
+	return S_I18N;
 }
 
 void I18N::destroyInstance()
 {
-	CC_SAFE_DELETE(s_I18N);
+	CC_SAFE_DELETE(S_I18N);
 }
 
 void I18N::setLanguageType( LangType langType )
 {
-	//Çå³ıÔ­À´ÓïÑÔ
-	m_mapString.clear();
-
-	//¸üĞÂÓïÑÔ
-	elanguage = langType;
-
-	//¶ÁÈ¡ÅäÖÃÎÄ¼ş£¬ÓÃĞÂµÄÓïÑÔ
-	loadStringFromConf(PATH_I18N);
+    //æ›´æ–°è¯­è¨€
+    S_elanguage = langType;
+    
+    //å¦‚æœå·²ç»è¯»å–å°±é‡æ–°è¯»å–
+    if (S_I18N) S_I18N->setLanguageType_(S_elanguage);
 }
 
 //=================================
+bool I18N::init()
+{
+    S_elanguage = (I18N::LangType)((int)cocos2d::Application::getInstance()->getCurrentLanguage() + 1);
+    
+    return loadStringFromConf(PATH_I18N);
+}
+
 bool I18N::loadStringFromConf( const char* sFilePath )
 {
-	//¶ÁÈ¡ÅäÖÃÎÄ¼ş
-	if (!CSVLoad::getInstance()->loadFile(sFilePath))
+	//è¯»å–é…ç½®æ–‡ä»¶
+	if (!CSVLoader::getInstance()->loadFile(sFilePath))
 	{
 		CCLOG("@wrong loadFile(sFilePath) in I18N::loadStringFromConf");
 		return false;
 	}
 
-	//¶ÁÈ¡csvÁĞ±í
-	std::vector<std::vector<std::string> > vec = CSVLoad::getInstance()->getCSVFile(sFilePath);
+	//è¯»å–csvåˆ—è¡¨
+	std::vector<std::vector<unsigned char*> > vec = CSVLoader::getInstance()->getCSVFile(sFilePath);
 
-	//ÁĞÊıÉÙÓÚ2£¬ÔòÅäÖÃÎÄ¼şÓĞÎó
-	int nSize = vec.size();
+	//åˆ—æ•°å°‘äº2ï¼Œåˆ™é…ç½®æ–‡ä»¶æœ‰è¯¯
+	int nSize = (int)vec.size();
 	if (nSize < 2)
 	{
 		CCLOG("wrong nColNum in I18N::loadStringFromConf");
 		return false;
 	}
 
-	std::string StrKey = "";
-	std::string StrValue = "";
+    std::vector<unsigned char*> vLine;
+	unsigned char* StrKey;
+	unsigned char* StrValue;
 
-	//½«ÅäÖÃÎÄ¼şµÄËùÓĞ×Ö·û´®·ÅÈë×ÖµäÖĞ£¬ºöÂÔµÚÒ»ĞĞ
+	//å°†é…ç½®æ–‡ä»¶çš„æ‰€æœ‰å­—ç¬¦ä¸²æ”¾å…¥å­—å…¸ä¸­ï¼Œå¿½ç•¥ç¬¬ä¸€è¡Œ
 	for (int i = 1; i < nSize; ++i)
 	{
-		//csvµÄµÚÒ»ÁĞÊÇID£¬µÚ¶şÁĞÊÇ×Ö·û´®
-		StrKey = vec.at(i).at(0);
-		StrValue = vec.at(i).at(elanguage);
+		//csvçš„ç¬¬ä¸€åˆ—æ˜¯IDï¼Œç¬¬äºŒåˆ—æ˜¯å­—ç¬¦ä¸²
+        vLine = std::move(vec.at(i));
+		StrKey = vLine.at(0);
+		StrValue = vLine.at((int)S_elanguage);
 
-		m_mapString.insert(std::pair<std::string, std::string>(StrKey, StrValue));
+		m_mapString.insert(std::pair<std::string, std::string>(
+            std::string((char*)StrKey), std::string((char*)StrValue)));
 	}
 
-	//ÊÍ·ÅcsvµÄÄÚ´æ
-	CSVLoad::getInstance()->releaseFile(sFilePath);
+	//é‡Šæ”¾csvçš„å†…å­˜
+	CSVLoader::getInstance()->releaseFile(sFilePath);
 
 	return true;
 }
 
-
+void I18N::setLanguageType_( LangType langType )
+{
+    //æ¸…é™¤åŸæ¥è¯­è¨€
+    m_mapString.clear();
+    
+    //è¯»å–é…ç½®æ–‡ä»¶ï¼Œç”¨æ–°çš„è¯­è¨€
+    loadStringFromConf(PATH_I18N);
+}
 
 

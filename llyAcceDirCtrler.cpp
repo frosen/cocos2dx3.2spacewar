@@ -28,7 +28,7 @@ AcceDirCtrler* AcceDirCtrler::getInstance()
 {
 	if (s_ADCer == nullptr)
 	{
-		s_ADCer = new AcceDirCtrler();
+		s_ADCer = new (std::nothrow) AcceDirCtrler();
 		if (!s_ADCer || !s_ADCer->init())
 		{
 			CC_SAFE_DELETE(s_ADCer);

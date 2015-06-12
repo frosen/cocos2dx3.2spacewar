@@ -20,7 +20,7 @@ AngleToVec* lly::AngleToVec::getInstance()
 {
 	if (s_A2V == nullptr)
 	{
-		s_A2V = new AngleToVec();
+		s_A2V = new (std::nothrow) AngleToVec();
 		if (!s_A2V || !s_A2V->init())
 		{
 			if(s_A2V) delete s_A2V;
