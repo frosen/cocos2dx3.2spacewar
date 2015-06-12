@@ -65,6 +65,8 @@ public:
 	std::string getString(const char* ch) { return m_mapString.at(ch); }
 
 protected:
+    virtual bool init();
+    
 	//从配置文件中读取字符串，放置于字典里
 	bool loadStringFromConf(const char* sFilePath);
     

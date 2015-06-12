@@ -21,8 +21,8 @@ I18N* I18N::getInstance()
 {
 	if (nullptr == S_I18N)
 	{
-		S_I18N = new I18N();
-		if (S_I18N && S_I18N->loadStringFromConf(PATH_I18N))
+        S_I18N = new (std::nothrow) I18N();
+		if (S_I18N && S_I18N->init())
 		{
 			return S_I18N;
 		}
@@ -50,6 +50,13 @@ void I18N::setLanguageType( LangType langType )
 }
 
 //=================================
+bool I18N::init()
+{
+    S_elanguage = (I18N::LangType)((int)cocos2d::Application::getInstance()->getCurrentLanguage() + 1);
+    
+    return loadStringFromConf(PATH_I18N);
+}
+
 bool I18N::loadStringFromConf( const char* sFilePath )
 {
 	//读取配置文件

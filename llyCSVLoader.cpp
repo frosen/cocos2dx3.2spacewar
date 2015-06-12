@@ -20,7 +20,7 @@ CSVLoader* CSVLoader::getInstance()
 {
 	if (!S_CsvLoader)
 	{
-		S_CsvLoader = new CSVLoader();
+        S_CsvLoader = new (std::nothrow) CSVLoader();
 	}
 	return S_CsvLoader;
 }
